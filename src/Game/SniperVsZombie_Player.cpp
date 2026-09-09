@@ -5,9 +5,7 @@
 
 #include "SniperVsZombie_Player.h"
 #include "SniperVsZombie_MainStage.h"
-#include "Component/ComponentStateIdleWalk.h"
-#include "Component/ComponentCameraController.h"
-#include "Component/ComponentPlayerState.h"
+#include "Component/State/ComponentStateIdleWalk.h"
 
 namespace SniperVsZombie {
 bool Player::Init()
@@ -26,13 +24,7 @@ bool Player::Init()
 
     SetTranslate({0, 5, 0});
 
-    AddComponent<ComponentPlayerState>();
-
-    AddComponent<ComponentCameraController>();
-
-    auto col = AddComponent<ComponentCollisionCapsule>()    //
-                   ->SetRadius(3.0f)
-                   ->SetHeight(13.0f);
+    auto col = AddComponent<ComponentCollisionCapsule>()->SetRadius(3.0f)->SetHeight(13.0f);
 
     col->UseGravity();
     col->SetCollisionGroup(ComponentCollision::CollisionGroup::PLAYER);

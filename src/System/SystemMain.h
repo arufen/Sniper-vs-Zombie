@@ -81,4 +81,8 @@ bool IsShowGrid();
 //! RenderTarget HDRバッファを取得
 Texture* GetHdrBuffer();
 
+class LightManager;
+
+LightManager& GetLightManager();
+
 //@}

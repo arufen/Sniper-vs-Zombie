@@ -103,11 +103,11 @@ public:
                     tgt_pos_ += back * 2.0f;
                     cam_pos_ += back * 2.0f;
                 }
-                if(Input::IsKey(KEY_INPUT_Q)) {
+                if(Input::IsKey(KEY_INPUT_E)) {
                     tgt_pos_ += up * 2.0f;
                     cam_pos_ += up * 2.0f;
                 }
-                if(Input::IsKey(KEY_INPUT_E)) {
+                if(Input::IsKey(KEY_INPUT_Q)) {
                     tgt_pos_ -= up * 2.0f;
                     cam_pos_ -= up * 2.0f;
                 }
