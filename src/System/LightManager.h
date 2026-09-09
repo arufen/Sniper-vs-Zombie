@@ -22,6 +22,15 @@ public:
     //! 解放
     void finalize();
 
+    //----------------------------------------------------------
+    //! @name   ライト設定
+    //----------------------------------------------------------
+    //@{
+    void SetPointLightPosition(int index, float3 pos) { info_.light_point_[index].position_ = pos; }
+    void SetPointLightColor(int index, float3 color) { info_.light_point_[index].color_ = color; }
+    void SetPointLightRadius(int index, float radius) { info_.light_point_[index].radius_ = radius; }
+    //@}
+
 private:
     //----------------------------------------------------------
     //! @name   copy/move禁止

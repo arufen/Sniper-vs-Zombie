@@ -1,0 +1,52 @@
+ï»¿#pragma once
+
+//---------------------------------------------------------------------------------
+//	Float3 ƒNƒ‰ƒXi x y z ‚ª‚ ‚éƒNƒ‰ƒXj
+//---------------------------------------------------------------------------------
+class Float3
+{
+public:
+    float x;
+    float y;
+    float z;
+
+    Float3();    //	ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+    Float3(float x, float y, float z);
+    Float3(VECTOR v);
+
+    void Clear();                           //	ƒ[ƒ‰Šú‰»
+    void Set(float x, float y, float z);    //	’l‚ÌƒZƒbƒg
+    void Set(Float3 &f3);
+
+    float GetLength();                //	’·‚³æ“¾
+    void  Normalize();                //	³‹K‰»
+    void  SetLength(float length);    //	’·‚³İ’è
+
+    Float3 &operator=(const Float3 &f3);    //	= ‰‰Zq‚ÌƒI[ƒo[ƒ[ƒh
+
+    Float3 &operator+=(const Float3 &f3);    //	+= ‰‰Zq‚ÌƒI[ƒo[ƒ[ƒh
+    Float3 &operator-=(const Float3 &f3);    //	-= ‰‰Zq‚ÌƒI[ƒo[ƒ[ƒh
+    Float3 &operator*=(const float f);       //	*= ‰‰Zq‚ÌƒI[ƒo[ƒ[ƒh
+    Float3 &operator/=(const float f);       //	/= ‰‰Zq‚ÌƒI[ƒo[ƒ[ƒh
+
+    VECTOR VGet();            //	DXƒ‰ƒCƒuƒ‰ƒŠ‚Åg‚¤ VECTOR ‚ğ•Ô‚·
+    void   VSet(VECTOR v);    //	DXƒ‰ƒCƒuƒ‰ƒŠ‚Åg‚¤ VECTOR ‚Ì’l‚ğæ“¾‚µ‚Äİ’è
+};
+
+//	+ ‰‰Zq‚ÌƒI[ƒo[ƒ[ƒh
+Float3 operator+(const Float3 &f3_1, const Float3 &f3_2);
+//	- ‰‰Zq‚ÌƒI[ƒo[ƒ[ƒh
+Float3 operator-(const Float3 &f3_1, const Float3 &f3_2);
+//	* ‰‰Zq‚ÌƒI[ƒo[ƒ[ƒh
+Float3 operator*(const Float3 &f3, const float f);
+//	/ ‰‰Zq‚ÌƒI[ƒo[ƒ[ƒh
+Float3 operator/(const Float3 &f3, const float f);
+
+//	‚Q‚Â‚Ì Float3 ‚Ì‹——£‚ğ‹‚ß‚é
+float GetFloat3Distance(Float3 &pos1, Float3 &pos2);
+//	‚Q‚Â‚Ì Float3 ‚Ì“àÏ‚ğ‹‚ß‚é
+float GetFloat3Dot(Float3 &v1, Float3 &v2);
+//	‚Q‚Â‚Ì Float3 ‚ÌŠOÏ‚ğ‹‚ß‚é
+Float3 GetFloat3Cross(Float3 &v1, Float3 &v2);
+//	Float3 ‚ğ MATRIX ‚Å•ÏŠ·‚µ‚½‚à‚Ì‚ğ•Ô‚·
+Float3 GetFloat3VTransform(Float3 &v, MATRIX &mat);

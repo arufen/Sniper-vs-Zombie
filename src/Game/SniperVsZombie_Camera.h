@@ -11,8 +11,15 @@ class Camera : public Object
 public:
     BP_OBJECT_DECL(Camera, "SniperVsZombie::Camera");
 
+    void Shoot();
+
     //! @brief 初期化
     //! @return 初期化終了
     bool Init() override;
+    void Update() override;
+
+private:
+    float shootIntervalTime = 1.0f;
+    float shootCurrentTime  = shootIntervalTime;
 };
 }    // namespace SniperVsZombie

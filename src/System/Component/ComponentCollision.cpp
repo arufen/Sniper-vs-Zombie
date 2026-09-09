@@ -1161,9 +1161,10 @@ ComponentCollision::HitInfo ComponentCollision::isHit(ComponentCollisionLinePtr 
     if(capsule_owner == nullptr)
         return info;
 
-    auto capsule = capsule_owner->GetComponent<ComponentCollisionCapsule>();
-    if(capsule == nullptr)
-        return info;
+    //auto capsule = capsule_owner->GetComponent<ComponentCollisionCapsule>();
+    //if(capsule == nullptr)
+    //	return info;
+    auto capsule = col2;
 
     // カプセルの状態を分析
     auto  mat    = capsule->GetWorldMatrix();

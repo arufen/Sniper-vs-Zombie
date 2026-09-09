@@ -56,6 +56,11 @@ std::shared_ptr<ShaderPs> shader_ps_tonemapping_;    // ピクセルシェーダ
 
 }    // namespace
 
+LightManager& GetLightManager()
+{
+    return light_manager_;
+}
+
 //---------------------------------------------------------------------------
 //! 1フレームのCPU処理時間を取得(単位:μsec)
 //---------------------------------------------------------------------------

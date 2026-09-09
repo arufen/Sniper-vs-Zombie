@@ -1,0 +1,49 @@
+ï»¿#pragma once
+
+//---------------------------------------------------------------------------------
+//	Float2 ƒNƒ‰ƒX
+//---------------------------------------------------------------------------------
+class Float2
+{
+public:
+    float x;
+    float y;
+
+    Float2();    //	ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+    Float2(float x, float y);
+
+    void Clear();                  //	ƒ[ƒ‰Šú‰»
+    void Set(float x, float y);    //	’l‚ÌƒZƒbƒg
+    void Set(Float2 &f2);
+
+    float GetLength();                //	’·‚³æ“¾
+    void  Normalize();                //	³‹K‰»
+    void  SetLength(float length);    //	’·‚³İ’è
+
+    Float2 &operator=(const Float2 &f2);    //	= ‰‰Zq‚ÌƒI[ƒo[ƒ[ƒh
+
+    Float2 &operator+=(const Float2 &f2);    //	+= ‰‰Zq‚ÌƒI[ƒo[ƒ[ƒh
+    Float2 &operator-=(const Float2 &f2);    //	-= ‰‰Zq‚ÌƒI[ƒo[ƒ[ƒh
+    Float2 &operator*=(const float f);       //	*= ‰‰Zq‚ÌƒI[ƒo[ƒ[ƒh
+    Float2 &operator/=(const float f);       //	/= ‰‰Zq‚ÌƒI[ƒo[ƒ[ƒh
+};
+
+//	+ ‰‰Zq‚ÌƒI[ƒo[ƒ[ƒh
+Float2 operator+(const Float2 &f2_1, const Float2 &f2_2);
+//	- ‰‰Zq‚ÌƒI[ƒo[ƒ[ƒh
+Float2 operator-(const Float2 &f2_1, const Float2 &f2_2);
+//	* ‰‰Zq‚ÌƒI[ƒo[ƒ[ƒh
+Float2 operator*(const Float2 &f2, const float f);
+//	/ ‰‰Zq‚ÌƒI[ƒo[ƒ[ƒh
+Float2 operator/(const Float2 &f2, const float f);
+
+//	ƒ}ƒEƒXÀ•W‚ğ Float2 ‚Åæ“¾
+Float2 GetMouseFloat2();
+//	ƒ}ƒEƒX‚ÌˆÚ“®—Ê‚ğ Float2 ‚Åæ“¾
+Float2 GetMouseMoveFloat2();
+//	‚Q‚Â‚Ì Float2 ‚Ì‹——£‚ğ‹‚ß‚é
+float GetFloat2Distance(Float2 &pos1, Float2 &pos2);
+//	‚Q‚Â‚Ì Float2 ‚Ì“àÏ‚ğ‹‚ß‚é
+float GetFloat2Dot(Float2 &v1, Float2 &v2);
+//	‚Q‚Â‚Ì Float2 ‚ÌŠOÏ‚ğ‹‚ß‚é
+float GetFloat2Cross(Float2 &v1, Float2 &v2);
