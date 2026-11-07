@@ -29,7 +29,9 @@ bool City::Init()
 
     auto City = makeCity(position, scale);
 
-    AddComponent<ComponentCollisionModel>()->AttachToModel();
+    auto col = AddComponent<ComponentCollisionModel>();
+    col->AttachToModel();
+    col->SetCollisionGroup(ComponentCollision::CollisionGroup::GROUND);
 
     return true;
 }

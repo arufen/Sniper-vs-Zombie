@@ -48,12 +48,9 @@ bool Enemy::Init()
     if(auto walk = GetComponent<ComponentStateWalk>())
         walk->SetMoveSpeed(move_speed_);
 
-    //Register to enemy count in MainStage
-    /*	auto now_scene = Scene::GetCurrentScene();
-		if(auto scene = dynamic_cast<SniperVsZombie_MainStage*>(now_scene))
-		{
-			scene->AddEnemyCount();
-		}*/
+    //let the stage know one more enemy is alive
+    if(auto scene = dynamic_cast<SniperVsZombie_MainStage*>(Scene::GetCurrentScene()))
+        scene->IncreaseEnemyCount();
 
     return true;
 }
@@ -61,6 +58,15 @@ bool Enemy::Init()
 void Enemy::Update()
 {
     Super::Update();
+
+    // force move_speed_ onto the walk component on the first tick only - guaranteed
+    // safe here even if ComponentAIState's auto-added ComponentStateWalk wasn't
+    // fully ready yet back in Init()
+    if(!hasSyncedMoveSpeed_) {
+        hasSyncedMoveSpeed_ = true;
+        if(auto walk = GetComponent<ComponentStateWalk>())
+            walk->SetMoveSpeed(move_speed_);
+    }
 
     if(isDead_) {
         time_to_destroy_ -= GetDeltaTime();
@@ -132,7 +138,8 @@ void Enemy::OnHit(const ComponentCollision::HitInfo& hit_info)
         // the OTHER side's collider (the bullet), which is why that one's used above
         // to check the name. Compare collision_ against the head capsule from Init().
         wasHeadshot_ = (hit_info.collision_ == head_collision_.lock());
-        ToDeathState();
+        if(!isDead_)
+            ToDeathState();
 
         auto now_scene = Scene::GetCurrentScene();
         if(auto scene = dynamic_cast<SniperVsZombie_MainStage*>(now_scene)) {
@@ -144,6 +151,14 @@ void Enemy::OnHit(const ComponentCollision::HitInfo& hit_info)
 void Enemy::ToDeathState()
 {
     isDead_ = true;
+
+    //Play hit effect at this enemy's position
+    if(auto scene = dynamic_cast<SniperVsZombie_MainStage*>(Scene::GetCurrentScene())) {
+        int    play_handle = PlayEffekseer3DEffect(scene->GetHitEffectHandle());
+        float3 pos         = GetTranslate();
+        SetPosPlayingEffekseer3DEffect(play_handle, pos.x, pos.y + 10.0f, pos.z);
+        SetScalePlayingEffekseer3DEffect(play_handle, 5.0f, 5.0f, 5.0f);
+    }
 
     auto now_scene = Scene::GetCurrentScene();
     if(auto scene = dynamic_cast<SniperVsZombie_MainStage*>(now_scene)) {
@@ -160,6 +175,16 @@ void Enemy::ToDeathState()
     // there are 3 capsules (feet, body, head) - RemoveComponent<T>() only strips
     // one at a time, so loop until every capsule is gone, not just one of them.
     while(auto col = GetComponent<ComponentCollisionCapsule>()) RemoveComponent(col);
+}
+
+//! @brief 終了
+void Enemy::Exit()
+{
+    Super::Exit();
+
+    //let the stage know this enemy is gone
+    if(auto scene = dynamic_cast<SniperVsZombie_MainStage*>(Scene::GetCurrentScene()))
+        scene->DecreaseEnemyCount();
 }
 
 }    // namespace SniperVsZombie

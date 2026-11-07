@@ -24,6 +24,28 @@
 // ※シーン項目に追加する場合は更新が必要となります
 constexpr int SCENE_VERSION = 1;
 
+//align 0 = left, align 1 = middle, align 2 = right
+inline static void DrawTextWithAlign(const char* message, int color, int offsetX = 0, int offsetY = 0, int align = 0)
+{
+    // 書式付き文字列の描画幅・高さ・行数を取得する
+    s32 width;         // 幅
+    s32 height;        // 高さ
+    s32 line_count;    // 行数
+    GetDrawFormatStringSize(&width, &height, &line_count, message);
+
+    //Position
+    s32 x;
+    if(align == 0)
+        x = 0;
+    if(align == 1)
+        x = WINDOW_W / 2 - (width / 2);
+    if(align == 2)
+        x = (WINDOW_W - width);
+
+    s32 y = 32;
+    DrawFormatString(x + offsetX, y + offsetY, color, message);
+}
+
 class Scene
 {
 public:

@@ -20,12 +20,17 @@ public:
 
     void ToDeathState();
 
+    //! @brief 終了
+    void Exit() override;
+
     //! @brief set the waypoints this enemy walks through before it reaches the gate
     void SetPath(const std::vector<float3>& path)
     {
         path_       = path;
         path_index_ = 0;
     }
+
+    void SetMoveSpeed(float newSpeed) { move_speed_ = newSpeed; }
 
     /*void SetWalkSpeed(float speed);*/
 
@@ -48,5 +53,8 @@ private:
     size_t              path_index_          = 0;        //!< index of the waypoint we're currently heading to
     float               move_speed_          = 3.0f;     //!< walk speed
     float               waypoint_reach_dist_ = 15.0f;    //!< how close counts as "arrived" at a waypoint
+
+    bool hasSyncedMoveSpeed_ =
+        false;    //!< forces move_speed_ onto ComponentStateWalk on the first Update() - safer than doing it in Init(), in case the component isn't fully ready yet
 };
 }    // namespace SniperVsZombie

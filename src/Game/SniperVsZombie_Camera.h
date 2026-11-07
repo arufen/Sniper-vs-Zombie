@@ -17,9 +17,12 @@ public:
     //! @return 初期化終了
     bool Init() override;
     void Update() override;
+    void Exit() override;
 
 private:
     float shootIntervalTime = 1.0f;
     float shootCurrentTime  = shootIntervalTime;
+
+    int shootSoundHandle_ = -1;    //!< sniper shot SFX, loaded in Init()
 };
 }    // namespace SniperVsZombie
