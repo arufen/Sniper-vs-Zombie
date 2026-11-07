@@ -70,7 +70,7 @@ void ComponentFPSCameraController::Update()
 
     // 投影行列をパラメーターで設定
     SetupCamera_Perspective(fov_);
-    SetCameraNearFar(0.01f, 1000.0f);
+    SetCameraNearFar(0.01f, 3000.0f);
 
     //Zoomed when pressed E
 

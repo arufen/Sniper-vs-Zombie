@@ -27,6 +27,9 @@ bool Camera::Init()
     gunModel->SetRotationAxisXYZ({0.0f, -90.0f, 0.0f});
     gunModel->SetScaleAxisXYZ({0.03f, 0.03f, 0.03f});
 
+    //SFX
+    shootSoundHandle_ = LoadSoundMem("data/Game/Audio/sfx_sniper_shot.mp3");
+
     return true;
 }
 
@@ -41,6 +44,12 @@ void Camera::Shoot()
     auto bullet = Scene::Object::Create<Bullet>();
     bullet->SetTranslate(GetTranslate());
     bullet->SetDirection(forward);
+
+    // 音量の設定
+    ChangeVolumeSoundMem(static_cast<int>(255.0f * 50.0f / 100.0f), shootSoundHandle_);
+
+    //SFX - DX_PLAYTYPE_BACK plays it without blocking, and lets overlapping shots layer instead of cutting off
+    PlaySoundMem(shootSoundHandle_, DX_PLAYTYPE_BACK);
 }
 
 void Camera::Update()
@@ -61,5 +70,12 @@ void Camera::Update()
             }
         }
     }
+}
+
+void Camera::Exit()
+{
+    Super::Exit();
+
+    DeleteSoundMem(shootSoundHandle_);
 }
 }    // namespace SniperVsZombie

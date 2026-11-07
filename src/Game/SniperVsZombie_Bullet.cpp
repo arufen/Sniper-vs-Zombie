@@ -16,7 +16,8 @@ bool Bullet::Init()
 
     SetName("Bullet");
 
-    AddComponent<ComponentModel>("data/Game/Models/Bullet/bullet.mv1");
+    auto model = AddComponent<ComponentModel>("data/Game/Models/Bullet/bullet.mv1");
+    model->SetScaleAxisXYZ({0.05f});
 
     auto col = AddComponent<ComponentCollisionLine>();
 
@@ -26,7 +27,9 @@ bool Bullet::Init()
     col->SetLine({0.0f, 0.0f, speed_ + offsetSize}, {0.0f, 0.0f, 0.0f});
 
     col->SetCollisionGroup(ComponentCollision::CollisionGroup::ETC);
-    col->SetHitCollisionGroup((u32)ComponentCollision::CollisionGroup::ENEMY);
+    col->SetHitCollisionGroup((u32)ComponentCollision::CollisionGroup::ENEMY /* | 
+									(u32)ComponentCollision::CollisionGroup::GROUND*/
+    );
 
     SetScaleAxisXYZ({0.2f});
     return true;
