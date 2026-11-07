@@ -7,7 +7,7 @@
 #include "SniperVsZombie_Sky.h"
 #include "SniperVsZombie_WoodTower.h"
 #include "SniperVsZombie_Helicopter.h"
-#include "SniperVsZombie_Enemy.h"
+#include "SniperVsZombie_NormalZombie.h"
 #include "SniperVsZombie_MainStage.h"
 #include "SniperVsZombie_MainMenu.h"
 #include "Component/State/ComponentStateWalk.h"
@@ -77,7 +77,7 @@ bool SniperVsZombie_GameOver::Init()
         path->SetName("Gate");
 
         //Create the enemy that broke in
-        auto enemy = Scene::Object::Create<Enemy>();
+        auto enemy = Scene::Object::Create<NormalZombie>();
         enemy->SetTranslate({70.260f, 3.801f, 740.620f});
         enemy->SetScaleAxisXYZ({0.7f, 0.7f, 0.7f});
         enemy->SetRotationAxisXYZ({0.0f, 180.0f, 0.0f});

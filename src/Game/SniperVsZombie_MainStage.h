@@ -4,6 +4,7 @@
 //---------------------------------------------------------------------------
 #include <System/Scene.h>
 #include <Game/Component/ComponentBlackScreen.h>
+#include <Game/Component/ComponentPlayerStats.h>
 
 namespace SniperVsZombie {
 
@@ -40,7 +41,7 @@ private:
     void UpdateCivilian();
     void StageDifficultyUpdate();
 
-    void OnGameOver(bool isWin);
+    void OnGameOver(bool isWin, bool breakGate);
 
     inline static const float3 ENEMY_DEFAULT_SPAWN          = {394.0f, 41.0f, 440.0f};
     float                      time_to_spawn_enemy_interval = 5.0f;
@@ -67,6 +68,9 @@ private:
     int    arrowHandle_ = -1;                    //!< data/Game/UI/arrow.png
 
     ComponentBlackScreenPtr blackScreen_;    // fade-to-black used when leaving this scene
+
+    std::weak_ptr<ComponentPlayerStats>
+        playerStats_;    //weak ref to player HP, weak so the stage does not keep it alive(プレイヤーHPへの弱参照。ステージが寿命を握らないようweak)
 };
 
 }    // namespace SniperVsZombie

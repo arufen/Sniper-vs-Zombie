@@ -1,62 +1,29 @@
 ﻿//---------------------------------------------------------------------------
-//!	@file	TutorialX_Player.cpp
-//! @brief	TutorialX_Player
+//!	@file	SniperVsZombie_Player.cpp
+//! @brief	SniperVsZombie_Player
 //---------------------------------------------------------------------------
 
 #include "SniperVsZombie_Player.h"
-#include "SniperVsZombie_MainStage.h"
-#include "Component/State/ComponentStateIdleWalk.h"
+#include "Component/ComponentPlayerStats.h"
 
 namespace SniperVsZombie {
+//! @brief 初期化
+//! @return 初期化終了
 bool Player::Init()
 {
     Super::Init();
 
+    //enemies find the player by this name(敵はこの名前でプレイヤーを探す)
     SetName("Player");
 
-    //auto player = Scene::Object::Create<Object>("Player");
-    AddComponent<ComponentModel>("data/Game/Models/Player/Player.mv1")
-        ->SetAnimation({
-            { "idle",  "data/Game/Models/Player/Anims/Idle.mv1", 1, 1.0f}, // Idle
-            { "walk",  "data/Game/Models/Player/Anims/Walk.mv1", 1, 1.0f}, // Jump
-            {"throw", "data/Game/Models/Player/Anims/Throw.mv1", 1, 1.0f}  // Throw
-    });
-
-    SetTranslate({0, 5, 0});
-
+    //body for enemies to touch. no UseGravity, the sniper stands still on the tower(敵が触れる体。狙撃手は塔の上で動かないので重力なし)
     auto col = AddComponent<ComponentCollisionCapsule>()->SetRadius(3.0f)->SetHeight(13.0f);
-
-    col->UseGravity();
     col->SetCollisionGroup(ComponentCollision::CollisionGroup::PLAYER);
 
+    //HP and damage live here, so this file stays clean(HPやダメージはここに集約するので、このファイルは綺麗なまま)
+    AddComponent<ComponentPlayerStats>();
+
     return true;
-}
-
-void Player::Update()
-{
-    //if(Input::IsKeyDown(KEY_INPUT_SPACE))
-    //{
-    //	RemoveComponent<ComponentStateIdleWalk>();
-    //	AddComponent<ComponentStateThrow>();
-    //}
-
-#if 0
-		if (Input::IsKeyDown(KEY_INPUT_SPACE))
-		{
-			const float3 up_len = { 0.0f, 5.0f, 0.0f };
-			float3		 vec = { 0.0f, 1.0f, 0.0f };
-			if (auto model = GetComponent<ComponentModel>())
-			{
-				constexpr float front_len = 5.0f;
-
-				vec = -model->GetWorldVectorAxisZ() * front_len;
-			}
-
-			auto bullet = Scene::Object::Create<Bullet>();
-			bullet->SetDirection(vec);
-			bullet->SetTranslate(GetTranslate() + up_len + vec);
-		}
-#endif
 }
 
 }    // namespace SniperVsZombie

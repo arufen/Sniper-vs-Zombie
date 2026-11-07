@@ -3,12 +3,13 @@
 //! @brief	Tutorial_X
 //---------------------------------------------------------------------------
 #include "SniperVsZombie_MainStage.h"
-#include "SniperVsZombie_Enemy.h"
+#include "SniperVsZombie_NormalZombie.h"
 #include "SniperVsZombie_City.h"
 #include "SniperVsZombie_Sky.h"
 #include "SniperVsZombie_WoodTower.h"
 #include "SniperVsZombie_Helicopter.h"
 #include "SniperVsZombie_Camera.h"
+#include "SniperVsZombie_Player.h"
 #include "SniperVsZombie_Gate.h"
 #include "SniperVsZombie_GameOver.h"
 #include "Random.h"
@@ -17,20 +18,24 @@
 
 namespace SniperVsZombie {
 static const float3 PLAYER_SPAWN_POSITION = float3{447.147f, 231.806f, 585.323f};
+static const float3 PLAYER_BODY_OFFSET    = float3{
+    0.0f, -10.0f, 0.0f};    //player hit body sits under the camera eye, tune this if the capsule looks off(当たり判定の体はカメラの目の下。ズレたらここを調整)
 
-//Enemy Spawn points
-static const std::vector<float3> enemySpawnPos = {
-    { -62.530f, 28.521f, 309.090f},
-    {-358.739f, 24.193f, 501.069f},
-    { 460.635f, 18.468f, 707.177f},
+//One lane = where a zombie spawns + the waypoints it walks to the gate.
+//Spawn and path stay together, so they can not get out of sync when you add or remove a lane(1レーン=出現位置+ゲートまでの経路。セットで持つので、追加・削除してもズレない)
+struct EnemyLane
+{
+    float3              spawn;    //spawn position(出現位置)
+    std::vector<float3> path;     //waypoints before the gate(ゲート前のウェイポイント)
 };
 
-//Waypoints each enemy walks through before reaching the gate.
-//enemyPathFinding[i] is the path used by an enemy spawned at enemySpawnPos[i].
-static const std::vector<std::vector<float3>> enemyPathFinding = {
-    {{236.747f, 0.139f, 316.820f}, {233.324f, 0.139f, 671.936f}, {70.552f, 0.139f, 726.139f}},
-    {{-332.641f, 0.139f, 685.004f}, {64.192f, 0.139f, 719.587f}},
-    {{254.435f, 0.139f, 678.518}, {64.192f, 0.139f, 719.587f}},
+static const std::vector<EnemyLane> enemyLanes = {
+    //lane 0
+    { {-62.530f, 28.521f, 309.090f}, {{236.747f, 0.139f, 316.820f}, {233.324f, 0.139f, 671.936f}, {70.552f, 0.139f, 726.139f}}},
+    //lane 1
+    {{-358.739f, 24.193f, 501.069f},                              {{-332.641f, 0.139f, 685.004f}, {64.192f, 0.139f, 719.587f}}},
+    //lane 2
+    { {460.635f, 18.468f, 707.177f},                               {{254.435f, 0.139f, 678.518f}, {64.192f, 0.139f, 719.587f}}},
 };
 
 void SniperVsZombie_MainStage::AddScore(int num)
@@ -55,6 +60,10 @@ bool SniperVsZombie_MainStage::Init()
     //CAMERA
     auto camera = Scene::Object::Create<Camera>()->SetTranslate(PLAYER_SPAWN_POSITION);
     camera->SetRotationAxisXYZ({0.0f, -180.0f, 0.0f});
+
+    //PLAYER - hit body + HP. view and shooting stay in the Camera above(プレイヤー。当たり判定とHP。視点と射撃は上のCamera)
+    auto player  = Scene::Object::Create<Player>()->SetTranslate(PLAYER_SPAWN_POSITION + PLAYER_BODY_OFFSET);
+    playerStats_ = player->GetComponent<ComponentPlayerStats>();
 
     //ENEMY - first one goes out right away, rest come from the spawn timer in Update()
     CreateEnemy();
@@ -116,12 +125,13 @@ void SniperVsZombie_MainStage::CreateEnemy()
     if(enemiesCurrentCount_ >= MAX_ENEMIES)
         return;
 
-    int spawnIndex = rand() % static_cast<int>(enemySpawnPos.size());
+    //pick a random lane, spawn position and path come together(ランダムにレーンを選ぶ。出現位置と経路はセット)
+    const EnemyLane& lane = enemyLanes[rand() % static_cast<int>(enemyLanes.size())];
 
-    auto newEnemy = Scene::Object::Create<Enemy>();
-    newEnemy->SetMoveSpeed(GetRandomF(0.1f, 0.3f));
-    newEnemy->SetTranslate(enemySpawnPos[spawnIndex]);
-    newEnemy->SetPath(enemyPathFinding[spawnIndex]);
+    auto newZombie = Scene::Object::Create<NormalZombie>();
+    newZombie->SetMoveSpeed(GetRandomF(0.1f, 0.3f));
+    newZombie->SetTranslate(lane.spawn);
+    newZombie->SetPath(lane.path);
 }
 
 void SniperVsZombie_MainStage::UpdateSpawnTimer()
@@ -166,13 +176,13 @@ void SniperVsZombie_MainStage::TriggerHitmark(bool isHeadshot)
     hitmarkerIsHeadshot_ = isHeadshot;
 }
 
-void SniperVsZombie_MainStage::OnGameOver(bool isWin)
+void SniperVsZombie_MainStage::OnGameOver(bool isWin, bool breakGate)
 {
     isGameOver_ = true;
     isWin_      = isWin;
 
-    //if the zombies break in
-    if(!isWin) {
+    //play the broken gate only when zombies broke it, not when the player died(ゲートが壊された時だけ壊れ演出。プレイヤー死亡では出さない)
+    if(breakGate) {
         if(auto gate = Scene::Object::Get<Gate>("Gate")) {
             gate->DestroyGate();
         }
@@ -209,15 +219,17 @@ void SniperVsZombie_MainStage::Update()
     }
 
     //Check Gameover
-    if(gateHP_ <= 0) {
-        if(!isGameOver_) {
-            OnGameOver(false);
-        }
-    }
-    else if(civilianSaved_ >= civilianTotalCount_) {
-        if(!isGameOver_) {
-            OnGameOver(true);
-        }
+    if(!isGameOver_) {
+        bool isPlayerDead = false;
+        if(auto stats = playerStats_.lock())
+            isPlayerDead = stats->IsDead();
+
+        if(gateHP_ <= 0)
+            OnGameOver(false, true);    //lose, gate broke(負け。ゲートが壊れた)
+        else if(isPlayerDead)
+            OnGameOver(false, false);    //lose, player died(負け。プレイヤーが死んだ)
+        else if(civilianSaved_ >= civilianTotalCount_)
+            OnGameOver(true, false);    //win(勝ち)
     }
 
     //Stage Difficulty adjust (lower spawn interval the more civilians saved)
@@ -397,6 +409,10 @@ void SniperVsZombie_MainStage::PostDraw()
             DrawRotaGraphF(x, y, scale, 0.0f, arrowHandle_, TRUE);
         }
     }
+
+    //PLAYER HP UI + red hit flash(プレイヤーHP表示と被弾の赤フラッシュ)
+    if(auto stats = playerStats_.lock())
+        stats->DrawHUD();
 
     //BLACK SCREEN TRANSITION - draw LAST so it covers everything above during fades
     blackScreen_->DrawBlackScreen();
