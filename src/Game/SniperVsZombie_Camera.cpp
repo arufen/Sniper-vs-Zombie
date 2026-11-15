@@ -1,9 +1,10 @@
 ﻿//---------------------------------------------------------------------------
-//!	@file	TutorialX_Camera.cpp
-//! @brief	TutorialX_Camera
+//!	@file	SniperVsZombie_Camera.cpp
+//! @brief	SniperVsZombie_Camera
 //---------------------------------------------------------------------------
 
 #include "SniperVsZombie_Camera.h"
+#include "ObjectNames.h"
 #include "SniperVsZombie_MainStage.h"
 #include "SniperVsZombie_Bullet.h"
 #include "Game/Component/ComponentFPSCameraController.h"
@@ -15,7 +16,7 @@ bool Camera::Init()
 {
     Super::Init();
 
-    SetName("Camera");
+    SetName(Names::CAMERA);
 
     auto cameraController = AddComponent<ComponentFPSCameraController>();
     SetTranslate({0.0f, 10.0f, 0.0f});

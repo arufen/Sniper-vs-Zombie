@@ -1,9 +1,10 @@
 ﻿//---------------------------------------------------------------------------
-//!	@file	TutorialX_Player.cpp
-//! @brief	TutorialX_Player
+//!	@file	SniperVsZombie_City.cpp
+//! @brief	SniperVsZombie_City
 //---------------------------------------------------------------------------
 
 #include "SniperVsZombie_City.h"
+#include "ObjectNames.h"
 #include "SniperVsZombie_MainStage.h"
 
 namespace SniperVsZombie {
@@ -14,7 +15,7 @@ bool City::Init()
 {
     Super::Init();
 
-    SetName("City");
+    SetName(Names::CITY);
 
     // lambda helper to spawn a City piece fast
     auto makeCity = [this](float3 position, float3 scale) {

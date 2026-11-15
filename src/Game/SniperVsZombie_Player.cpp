@@ -4,6 +4,7 @@
 //---------------------------------------------------------------------------
 
 #include "SniperVsZombie_Player.h"
+#include "ObjectNames.h"
 #include "Component/ComponentPlayerStats.h"
 
 namespace SniperVsZombie {
@@ -14,7 +15,7 @@ bool Player::Init()
     Super::Init();
 
     //enemies find the player by this name(敵はこの名前でプレイヤーを探す)
-    SetName("Player");
+    SetName(Names::PLAYER);
 
     //body for enemies to touch. no UseGravity, the sniper stands still on the tower(敵が触れる体。狙撃手は塔の上で動かないので重力なし)
     auto col = AddComponent<ComponentCollisionCapsule>()->SetRadius(3.0f)->SetHeight(13.0f);

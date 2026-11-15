@@ -1,9 +1,10 @@
 ﻿//---------------------------------------------------------------------------
-//!	@file	TutorialX_Player.cpp
-//! @brief	TutorialX_Player
+//!	@file	SniperVsZombie_Gate.cpp
+//! @brief	SniperVsZombie_Gate
 //---------------------------------------------------------------------------
 
 #include "SniperVsZombie_Gate.h"
+#include "ObjectNames.h"
 #include "SniperVsZombie_MainStage.h"
 
 namespace SniperVsZombie {
@@ -42,7 +43,7 @@ bool Gate::Init()
         return g;
     };
 
-    SetName("Gate");
+    SetName(Names::GATE);
 
     float3 position{-390.0f, 9.0f, 440.0f};
     float3 scale{4.0, 4.0f, 4.0f};

@@ -1,7 +1,8 @@
 ﻿//---------------------------------------------------------------------------
-//!	@file	TutorialX_WoodTower.h
-//! @brief	TutorialX_WoodTower
+//!	@file	SniperVsZombie_WoodTower.h
+//! @brief	SniperVsZombie_WoodTower
 //---------------------------------------------------------------------------
+#pragma once
 #include <System/Scene.h>
 
 namespace SniperVsZombie {

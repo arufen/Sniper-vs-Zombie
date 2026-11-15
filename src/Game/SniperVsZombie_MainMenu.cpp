@@ -1,8 +1,10 @@
 ﻿//---------------------------------------------------------------------------
-//!	@file	Tutorial_X.cpp
-//! @brief	Tutorial_X
+//!	@file	SniperVsZombie_MainMenu.cpp
+//! @brief	SniperVsZombie_MainMenu
 //---------------------------------------------------------------------------
 #include "SniperVsZombie_MainMenu.h"
+#include "ObjectNames.h"
+#include "StageConfig.h"
 #include "SniperVsZombie_City.h"
 #include "SniperVsZombie_Sky.h"
 #include "SniperVsZombie_WoodTower.h"
@@ -19,20 +21,18 @@ const float3 CAMERA_SPAWN_POSITION = float3{359.585f, 146.337f, 88.709f};
 bool SniperVsZombie_MainMenu::Init()
 {
     //CAMERA
-    //Scene::Object::Create<Camera>()->SetTranslate(CAMERA_SPAWN_POSITION);
     auto camera     = Scene::Object::Create<Object>();
     auto cameraComp = camera->AddComponent<ComponentCamera>();
     cameraComp->SetPositionAndTarget({66.70f, -11.70f, -57.40f}, {0.0f, 0.0f, 1.0f});
     cameraComp->SetPerspective(60.0f);
     camera->SetTranslate(CAMERA_SPAWN_POSITION);
-    camera->SetName("Camera");
+    camera->SetName(Names::CAMERA);
 
-    //MAP
+    //MAP - same positions as MainStage, from StageConfig.h(マップ。MainStageと同じ位置をStageConfig.hから)
     Scene::Object::Create<City>();
-    auto   woodTower     = Scene::Object::Create<WoodTower>();
-    float3 watchTowerPos = {437.0f, 100.0f, 550.0f};
-    woodTower->SetTranslate({watchTowerPos});
-    woodTower->SetRotationAxisXYZ({0.0f, -90.0f, 0.0f});
+    auto woodTower = Scene::Object::Create<WoodTower>();
+    woodTower->SetTranslate(Config::WOOD_TOWER_POSITION);
+    woodTower->SetRotationAxisXYZ(Config::WOOD_TOWER_ROTATION);
 
     //Sky
     Scene::Object::Create<Sky>();
@@ -42,7 +42,7 @@ bool SniperVsZombie_MainMenu::Init()
 
     //BLACK SCREEN TRANSITION
     auto blackScreenObj = Scene::Object::Create<Object>();
-    blackScreenObj->SetName("BlackScreen");
+    blackScreenObj->SetName(Names::BLACK_SCREEN);
     blackScreen_ = blackScreenObj->AddComponent<ComponentBlackScreen>();
     blackScreen_->StartFadeIn();    // start fully black, fade INTO the menu
 

@@ -1,9 +1,10 @@
 ﻿//---------------------------------------------------------------------------
-//!	@file	TutorialX_Player.cpp
-//! @brief	TutorialX_Player
+//!	@file	SniperVsZombie_Ground.cpp
+//! @brief	SniperVsZombie_Ground
 //---------------------------------------------------------------------------
 
 #include "SniperVsZombie_Ground.h"
+#include "ObjectNames.h"
 #include "SniperVsZombie_MainStage.h"
 
 namespace SniperVsZombie {
@@ -14,7 +15,7 @@ bool Ground::Init()
 {
     Super::Init();
 
-    SetName("Ground");
+    SetName(Names::GROUND);
 
     // lambda helper to spawn a ground piece fast
     auto makeGround = [this](float3 position, float3 scale) {

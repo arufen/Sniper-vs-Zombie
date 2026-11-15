@@ -21,14 +21,11 @@ public:
 
     void Update() override;
 
-    //! @brief 終了
-    void Exit() override;
-
     // 当たり判定が行われたときに呼ばれる関数
     void OnHit(const ComponentCollision::HitInfo& hit_info) override;
 
-    //same functions as the old Enemy, so MainStage and GameOver keep working(旧Enemyと同じ関数。MainStageとGameOverがそのまま使える)
+    //waypoints to the gate(ゲートまでのウェイポイント)
     void SetPath(const std::vector<float3>& path);
-    void SetMoveSpeed(float newSpeed);
+    void SetMoveSpeed(float new_speed);
 };
 }    // namespace SniperVsZombie

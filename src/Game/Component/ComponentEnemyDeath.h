@@ -11,6 +11,14 @@ class ComponentEnemyDeath : public Component
 public:
     BP_COMPONENT_DECL(ComponentEnemyDeath, u8"敵の死亡処理");
 
+    //everything the outside world needs to know about a kill(キルについて外側が知るべき情報)
+    struct KillInfo
+    {
+        bool   headshot = false;    //killed by a headshot(ヘッドショットで倒したか)
+        int    score    = 0;        //points for this kill(このキルの得点)
+        float3 position = {};       //where it died, for effects(死んだ位置。エフェクト用)
+    };
+
     void Init() override;
 
     void Update() override;
@@ -29,6 +37,9 @@ public:
     //called once when it dies. the Object uses this to remove its own behavior components(死んだ時に1回呼ばれる。Objectが自分の行動コンポーネントを外すのに使う)
     ComponentEnemyDeathPtr SetOnDie(std::function<void()> on_die);
 
+    //called once when it dies, for the game side: score, hit marker, effect. this component does not know the scene(死んだ時に1回呼ばれる。ゲーム側用: スコア・ヒットマーカー・エフェクト。このコンポーネントはシーンを知らない)
+    ComponentEnemyDeathPtr SetOnKilled(std::function<void(const KillInfo&)> on_killed);
+
     //call this from the Object's OnHit when a bullet hits(弾が当たった時にObjectのOnHitから呼ぶ)
     void OnBulletHit(const ComponentCollision::HitInfo& hit_info);
 
@@ -44,7 +55,9 @@ private:
 
     std::weak_ptr<ComponentCollision> head_collision_;    //weak so this does not keep the capsule alive(カプセルの寿命を握らないようweak)
 
-    std::function<void()> on_die_;    //(死亡時コールバック)
+    std::function<void()> on_die_;    //for the owner Object: stop its own behavior(所有Object用: 自分の行動を止める)
+
+    std::function<void(const KillInfo&)> on_killed_;    //for the game: score, hit marker, effect(ゲーム用: スコア・ヒットマーカー・エフェクト)
 
     bool is_dead_      = false;    //(死亡済みか)
     bool was_headshot_ = false;    //last hit was the head(最後の被弾が頭か)

@@ -1,7 +1,8 @@
 ﻿//---------------------------------------------------------------------------
-//!	@file	TutorialX_Stone.h
-//! @brief	TutorialX_Stone
+//!	@file	SniperVsZombie_Stone.h
+//! @brief	SniperVsZombie_Stone
 //---------------------------------------------------------------------------
+#pragma once
 #include <System/Scene.h>
 
 namespace SniperVsZombie {

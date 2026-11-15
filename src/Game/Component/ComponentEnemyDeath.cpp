@@ -1,5 +1,4 @@
 ﻿#include <Game/Component/ComponentEnemyDeath.h>
-#include <Game/SniperVsZombie_MainStage.h>
 
 void ComponentEnemyDeath::Init()
 {
@@ -42,18 +41,22 @@ ComponentEnemyDeathPtr ComponentEnemyDeath::SetOnDie(std::function<void()> on_di
     return std::dynamic_pointer_cast<ComponentEnemyDeath>(shared_from_this());
 }
 
+ComponentEnemyDeathPtr ComponentEnemyDeath::SetOnKilled(std::function<void(const KillInfo&)> on_killed)
+{
+    on_killed_ = on_killed;
+    return std::dynamic_pointer_cast<ComponentEnemyDeath>(shared_from_this());
+}
+
 void ComponentEnemyDeath::OnBulletHit(const ComponentCollision::HitInfo& hit_info)
 {
+    //already dead, the corpse does not count again(もう死んでいる。死体は二重にカウントしない)
+    if(is_dead_)
+        return;
+
     //collision_ is OUR capsule that got hit. if it is the head capsule, it is a headshot(collision_は被弾した自分のカプセル。頭のカプセルならヘッドショット)
     was_headshot_ = (hit_info.collision_ == head_collision_.lock());
 
-    if(!is_dead_)
-        Die();
-
-    //hit marker on the screen(画面のヒットマーカー)
-    if(auto scene = dynamic_cast<SniperVsZombie::SniperVsZombie_MainStage*>(Scene::GetCurrentScene())) {
-        scene->TriggerHitmark(was_headshot_);
-    }
+    Die();
 }
 
 void ComponentEnemyDeath::Die()
@@ -62,14 +65,13 @@ void ComponentEnemyDeath::Die()
 
     auto owner = GetOwner();
 
-    //play the hit effect at this enemy's position, and add the score(敵の位置でヒットエフェクトを出して、スコアを加算)
-    if(auto scene = dynamic_cast<SniperVsZombie::SniperVsZombie_MainStage*>(Scene::GetCurrentScene())) {
-        int    play_handle = PlayEffekseer3DEffect(scene->GetHitEffectHandle());
-        float3 pos         = owner->GetTranslate();
-        SetPosPlayingEffekseer3DEffect(play_handle, pos.x, pos.y + 10.0f, pos.z);
-        SetScalePlayingEffekseer3DEffect(play_handle, 5.0f, 5.0f, 5.0f);
-
-        scene->AddScore(was_headshot_ ? head_score_ : body_score_);
+    //tell the game. whoever spawned us decides what a kill means (score, hit marker, effect)(ゲームに伝える。キルの意味は生成した側が決める)
+    if(on_killed_) {
+        KillInfo info;
+        info.headshot = was_headshot_;
+        info.score    = was_headshot_ ? head_score_ : body_score_;
+        info.position = owner->GetTranslate();
+        on_killed_(info);
     }
 
     if(auto model = owner->GetComponent<ComponentModel>())
