@@ -6,16 +6,36 @@ void ComponentFPSCameraController::Init()
     __super::Init();
 
     scopeHandle = LoadGraph("data/Game/UI/scope.png");
+
+    GetMousePoint(
+        &mouse_prev_x_,
+        &mouse_prev_y_);    //start from where the cursor is, so the first frame does not jump(今のカーソル位置から始める。最初のフレームで視点が飛ばないように)
 }
 
 void ComponentFPSCameraController::Update()
 {
-    if(DebugCamera::IsUse())
+    //DEBUG CAMERA (F4): give the mouse back. right click works like before. the lock choice is remembered for later(デバッグカメラ中: マウスを返す。右クリック操作は今まで通り。ロックの選択は覚えておく)
+    if(DebugCamera::IsUse()) {
+        ApplyCursor(false);
+        GetMousePoint(&mouse_prev_x_, &mouse_prev_y_);    //keep it fresh, so the view does not jump when F4 is pressed again(視点が飛ばないよう毎フレーム更新)
         return;
+    }
 
     __super::Update();
 
     auto owner = GetOwner();
+
+    //----------------------------------------------------------
+    // MOUSE LOCK toggle(マウスロックの切り替え)
+    //----------------------------------------------------------
+    if(IsKeyDown(MOUSE_LOCK_KEY))
+        mouse_locked_ = !mouse_locked_;
+
+    //never trap the mouse when the game window is not in front, e.g. after alt-tab(ゲームのウィンドウが前面でない時はマウスを捕まえない。Alt+Tabの後など)
+    const bool window_active = GetForegroundWindow() == DxLib::GetMainWindowHandle();
+    const bool lock_now      = mouse_locked_ && window_active;
+    ApplyCursor(lock_now);
+
     //----------------------------------------------------------
     // マウス視点操作
     //----------------------------------------------------------
@@ -25,14 +45,11 @@ void ComponentFPSCameraController::Update()
         s32 x, y;
         GetMousePoint(&x, &y);
 
-        static s32 mouse_x = x;
-        static s32 mouse_y = y;
-
         // 移動量を差分で計算
-        s32 diff_x = x - mouse_x;
-        s32 diff_y = y - mouse_y;
+        s32 diff_x = x - mouse_prev_x_;
+        s32 diff_y = y - mouse_prev_y_;
 
-        if(IsMouseRepeat(MOUSE_INPUT_RIGHT)) {    // 右クリックしている間
+        if(lock_now || IsMouseRepeat(MOUSE_INPUT_RIGHT)) {    // locked, or holding right click(ロック中、または右クリックしている間)
             // 視点を回転させる
             rotate_h_ += static_cast<f32>(diff_x) * mouse_sensitivity_;
             rotate_v_ += static_cast<f32>(diff_y) * mouse_sensitivity_;
@@ -45,7 +62,7 @@ void ComponentFPSCameraController::Update()
         }
 
         // 値を次のフレームのために保存
-        GetMousePoint(&mouse_x, &mouse_y);
+        GetMousePoint(&mouse_prev_x_, &mouse_prev_y_);
     }
 
     //----------------------------------------------------------
@@ -109,6 +126,27 @@ void ComponentFPSCameraController::LateDraw()
     }
 }
 
+void ComponentFPSCameraController::ApplyCursor(bool lock_now)
+{
+    //only talk to the system when something changes(変化した時だけシステムに伝える)
+    if(lock_now == cursor_hidden_)
+        return;
+
+    cursor_hidden_ = lock_now;
+
+    //NOT the engine's HideMouse(): it also moves the cursor every frame, to the wrong spot (it adds the window's screen X),(エンジンのHideMouseは使わない: 毎フレーム、間違った位置にカーソルを動かす(ウィンドウの画面X座標を足してしまう))
+    //which fights our own centering and makes the camera spin. this only shows/hides(自前の中央寄せとケンカしてカメラが回り続ける。こちらは表示/非表示だけ)
+    SetMouseDispFlag(lock_now ? FALSE : TRUE);
+}
+
+void ComponentFPSCameraController::Exit()
+{
+    //always give the cursor back, e.g. the GameOver scene needs it for its buttons(必ずカーソルを返す。GameOverシーンのボタンで必要)
+    ApplyCursor(false);
+
+    __super::Exit();
+}
+
 float3 ComponentFPSCameraController::GetForwardVector(float offset) const
 {
     matrix mat_rot = matrix::identity();
@@ -161,6 +199,7 @@ void ComponentFPSCameraController::GUI()
             if(ImGui::Button(u8"削除"))
                 GetOwner()->RemoveComponent(shared_from_this());
 
+            ImGui::Checkbox(u8"マウスロック(Q)", &mouse_locked_);
             ImGui::DragFloat(u8"マウス感度", &mouse_sensitivity_, 0.0001f);
             ImGui::DragFloat3(u8"目の位置オフセット", eye_position_.f32);
             ImGui::DragFloat(u8"上限(ラジアン)", &limit_pitch_max_);

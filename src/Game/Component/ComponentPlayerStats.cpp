@@ -1,4 +1,5 @@
 ﻿#include <Game/Component/ComponentPlayerStats.h>
+#include <Game/HudText.h>
 #include <algorithm>
 
 void ComponentPlayerStats::Init()
@@ -86,8 +87,8 @@ void ComponentPlayerStats::DrawHUD()
 
     //HP BAR at the bottom left(左下のHPバー)
     const float x1 = 10.0f;
-    const float y1 = static_cast<float>(WINDOW_H) - 60.0f;
-    const float x2 = 260.0f;
+    const float y1 = static_cast<float>(WINDOW_H) - 64.0f;
+    const float x2 = 330.0f;    //was 260, a little bigger now(以前は260。少し大きく)
     const float y2 = static_cast<float>(WINDOW_H) - 30.0f;
 
     const float offset = 5.0f;    //inward offset, same as the gate bar(内側の余白。ゲートバーと同じ)
@@ -105,7 +106,12 @@ void ComponentPlayerStats::DrawHUD()
     DrawBoxAA(x1 + offset, y1 + offset, innerX2, y2 - offset, color, 1);
 
     //text above the bar(バーの上のテキスト)
-    DrawFormatString(10, static_cast<int>(y1) - 24, GetColor(255, 255, 255), "プレイヤー HP: %d / %d", static_cast<int>(hp_), static_cast<int>(max_hp_));
+    SniperVsZombie::Hud::DrawLabel(10,
+                                   static_cast<int>(y1) - SniperVsZombie::Hud::GetLineHeight(),
+                                   GetColor(255, 255, 255),
+                                   "プレイヤー HP: %d / %d",
+                                   static_cast<int>(hp_),
+                                   static_cast<int>(max_hp_));
 }
 
 void ComponentPlayerStats::GUI()
