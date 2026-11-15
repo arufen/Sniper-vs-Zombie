@@ -4,6 +4,7 @@
 //---------------------------------------------------------------------------
 #include "SniperVsZombie_GameOver.h"
 #include "ObjectNames.h"
+#include "ShaderCamera.h"
 #include "StageConfig.h"
 #include "SniperVsZombie_City.h"
 #include "SniperVsZombie_Sky.h"
@@ -37,6 +38,7 @@ bool SniperVsZombie_GameOver::Init()
 
     //Sky
     Scene::Object::Create<Sky>();
+    Scene::Object::Create<ShaderCamera>();    //sends the real camera position to ps_model.fx(本当のカメラ位置をps_model.fxへ送る)
 
     //Load helicopter
     auto heli = Scene::Object::Create<Helicopter>();
