@@ -1,7 +1,8 @@
 ﻿//---------------------------------------------------------------------------
-//!	@file	TutorialX_Camera.h
-//! @brief	TutorialX_Camera
+//!	@file	SniperVsZombie_Camera.h
+//! @brief	SniperVsZombie_Camera
 //---------------------------------------------------------------------------
+#pragma once
 #include <System/Scene.h>
 
 namespace SniperVsZombie {

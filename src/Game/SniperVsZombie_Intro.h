@@ -2,6 +2,7 @@
 //!	@file	SniperVsZombie_Intro.h
 //! @brief	Story intro screen, shown before the Main Menu
 //---------------------------------------------------------------------------
+#pragma once
 #include <System/Scene.h>
 #include <Game/Component/ComponentBlackScreen.h>
 

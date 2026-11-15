@@ -1,7 +1,8 @@
 ﻿//---------------------------------------------------------------------------
-//!	@file	TutorialX_Helicopter.h
-//! @brief	TutorialX_Helicopter
+//!	@file	SniperVsZombie_Helicopter.h
+//! @brief	SniperVsZombie_Helicopter
 //---------------------------------------------------------------------------
+#pragma once
 #include <System/Scene.h>
 
 namespace SniperVsZombie {

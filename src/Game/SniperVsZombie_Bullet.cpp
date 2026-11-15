@@ -4,6 +4,7 @@
 //---------------------------------------------------------------------------
 
 #include "SniperVsZombie_Bullet.h"
+#include "ObjectNames.h"
 #include "SniperVsZombie_MainStage.h"
 #include <System/Component/ComponentCollisionLine.h>
 
@@ -14,7 +15,7 @@ bool Bullet::Init()
 {
     Super::Init();
 
-    SetName("Bullet");
+    SetName(Names::BULLET);
 
     auto model = AddComponent<ComponentModel>("data/Game/Models/Bullet/bullet.mv1");
     model->SetScaleAxisXYZ({0.05f});

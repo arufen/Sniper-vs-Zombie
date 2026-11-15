@@ -1,13 +1,15 @@
 ﻿//---------------------------------------------------------------------------
-//!	@file	Tutorial_X.cpp
-//! @brief	Tutorial_X
+//!	@file	SniperVsZombie_GameOver.cpp
+//! @brief	SniperVsZombie_GameOver
 //---------------------------------------------------------------------------
 #include "SniperVsZombie_GameOver.h"
+#include "ObjectNames.h"
+#include "StageConfig.h"
 #include "SniperVsZombie_City.h"
 #include "SniperVsZombie_Sky.h"
 #include "SniperVsZombie_WoodTower.h"
 #include "SniperVsZombie_Helicopter.h"
-#include "SniperVsZombie_Enemy.h"
+#include "SniperVsZombie_NormalZombie.h"
 #include "SniperVsZombie_MainStage.h"
 #include "SniperVsZombie_MainMenu.h"
 #include "Component/State/ComponentStateWalk.h"
@@ -18,44 +20,38 @@
 #include <Game/Component/ComponentButton.h>
 
 namespace SniperVsZombie {
-const float3 CAMERA_SPAWN_POSITION = float3{359.585f, 146.337f, 88.709f};
 //! @brief 初期化
 //! @return 初期化済み
 bool SniperVsZombie_GameOver::Init()
 {
     //CAMERA
-    //Scene::Object::Create<Camera>()->SetTranslate(CAMERA_SPAWN_POSITION);
     auto camera     = Scene::Object::Create<Object>();
     auto cameraComp = camera->AddComponent<ComponentCamera>();
-    camera->SetName("Camera");
+    camera->SetName(Names::CAMERA);
 
-    //MAP
+    //MAP - same positions as MainStage, from StageConfig.h(マップ。MainStageと同じ位置をStageConfig.hから)
     Scene::Object::Create<City>();
-    auto   woodTower     = Scene::Object::Create<WoodTower>();
-    float3 watchTowerPos = {437.0f, 100.0f, 550.0f};
-    woodTower->SetTranslate({watchTowerPos});
-    woodTower->SetRotationAxisXYZ({0.0f, -90.0f, 0.0f});
+    auto woodTower = Scene::Object::Create<WoodTower>();
+    woodTower->SetTranslate(Config::WOOD_TOWER_POSITION);
+    woodTower->SetRotationAxisXYZ(Config::WOOD_TOWER_ROTATION);
 
     //Sky
     Scene::Object::Create<Sky>();
 
     //Load helicopter
     auto heli = Scene::Object::Create<Helicopter>();
-    heli->SetTranslate({1.360f, 414.269f, 700.566f});
-    heli->SetScaleAxisXYZ({0.75f, 0.75f, 0.75f});
-    heli->SetRotationAxisXYZ({0.0f, -90.0f, 0.0f});
+    heli->SetTranslate(Config::HELI_POSITION);
+    heli->SetScaleAxisXYZ(Config::HELI_SCALE);
+    heli->SetRotationAxisXYZ(Config::HELI_ROTATION_CUTSCENE);
     helicopter_ = heli;    // remember for cutscene animation
 
-    //load gate
-    //GATE
+    //GATE - a different name, so the cutscene zombie walks to the fake "Gate" point below instead(別名にする。カットシーンのゾンビは下の偽"Gate"地点へ歩く)
     auto gate = Scene::Object::Create<Gate>();
-    gate->SetName("Gate_cutscene");
+    gate->SetName(Names::GATE_CUTSCENE);
     gate->RemoveComponent<ComponentCollisionModel>();    // don't need collision for the cutscene
-    float3 gatePos   = {67.726, 0.911, 760.512};
-    float3 gateScale = {0.75f, 0.75f, 0.75f};
-    gate->SetTranslate(gatePos);
-    gate->SetScaleAxisXYZ(gateScale);
-    gate->SetRotationAxisXYZ({0.0f, 90.0f, 0.0f});
+    gate->SetTranslate(Config::GATE_POSITION);
+    gate->SetScaleAxisXYZ(Config::GATE_SCALE);
+    gate->SetRotationAxisXYZ(Config::GATE_ROTATION);
 
     //CUTSCENE - isWin_ is already set (MainStage calls SetResult() right before Scene::Change)
     if(isWin_) {
@@ -71,13 +67,13 @@ bool SniperVsZombie_GameOver::Init()
         cameraComp->SetPositionAndTarget({66.70f, 46.90f, -62.0f}, {0.0f, 0.0f, 1.0f});
         cameraComp->SetPerspective(45.0f);
 
-        //Create object path for enemyt
+        //fake "Gate" point behind the gate, the zombie walks through toward it(ゲートの奥の偽"Gate"地点。ゾンビはそこへ向かって通り抜ける)
         auto path = Scene::Object::Create<Object>();
         path->SetTranslate({70.222f, 4.138f, 900.0f});
-        path->SetName("Gate");
+        path->SetName(Names::GATE);
 
         //Create the enemy that broke in
-        auto enemy = Scene::Object::Create<Enemy>();
+        auto enemy = Scene::Object::Create<NormalZombie>();
         enemy->SetTranslate({70.260f, 3.801f, 740.620f});
         enemy->SetScaleAxisXYZ({0.7f, 0.7f, 0.7f});
         enemy->SetRotationAxisXYZ({0.0f, 180.0f, 0.0f});
@@ -89,7 +85,7 @@ bool SniperVsZombie_GameOver::Init()
 
     //BLACK SCREEN TRANSITION
     auto blackScreenObj = Scene::Object::Create<Object>();
-    blackScreenObj->SetName("BlackScreen");
+    blackScreenObj->SetName(Names::BLACK_SCREEN);
     blackScreen_ = blackScreenObj->AddComponent<ComponentBlackScreen>();
     blackScreen_->StartFadeIn();    // start fully black, fade INTO the game over screen
 

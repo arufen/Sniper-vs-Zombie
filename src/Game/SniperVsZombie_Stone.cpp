@@ -1,9 +1,10 @@
 ﻿//---------------------------------------------------------------------------
-//!	@file	TutorialX_Player.cpp
-//! @brief	TutorialX_Player
+//!	@file	SniperVsZombie_Stone.cpp
+//! @brief	SniperVsZombie_Stone
 //---------------------------------------------------------------------------
 
 #include "SniperVsZombie_Stone.h"
+#include "ObjectNames.h"
 #include "SniperVsZombie_MainStage.h"
 
 namespace SniperVsZombie {
@@ -14,7 +15,7 @@ bool Stone::Init()
 {
     Super::Init();
 
-    SetName("Stone");
+    SetName(Names::STONE);
 
     // lambda helper to spawn a Stone piece fast
     auto makeStone = [this](float3 position, float3 scale) {

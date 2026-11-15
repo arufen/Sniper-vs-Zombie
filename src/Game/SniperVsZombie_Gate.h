@@ -1,7 +1,8 @@
 ﻿//---------------------------------------------------------------------------
-//!	@file	TutorialX_Gate.h
-//! @brief	TutorialX_Gate
+//!	@file	SniperVsZombie_Gate.h
+//! @brief	SniperVsZombie_Gate
 //---------------------------------------------------------------------------
+#pragma once
 #include <System/Scene.h>
 
 namespace SniperVsZombie {

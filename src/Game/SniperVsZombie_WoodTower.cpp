@@ -1,9 +1,10 @@
 ﻿//---------------------------------------------------------------------------
-//!	@file	TutorialX_Player.cpp
-//! @brief	TutorialX_Player
+//!	@file	SniperVsZombie_WoodTower.cpp
+//! @brief	SniperVsZombie_WoodTower
 //---------------------------------------------------------------------------
 
 #include "SniperVsZombie_WoodTower.h"
+#include "ObjectNames.h"
 #include "SniperVsZombie_MainStage.h"
 
 namespace SniperVsZombie {
@@ -14,7 +15,7 @@ bool WoodTower::Init()
 {
     Super::Init();
 
-    SetName("WoodTower");
+    SetName(Names::WOOD_TOWER);
 
     // lambda helper to spawn a WoodTower piece fast
     auto makeWoodTower = [this](float3 position, float3 scale) {

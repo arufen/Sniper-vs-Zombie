@@ -1,91 +1,63 @@
 ﻿//---------------------------------------------------------------------------
-//!	@file	Tutorial_X.cpp
-//! @brief	Tutorial_X
+//!	@file	SniperVsZombie_MainStage.cpp
+//! @brief	SniperVsZombie_MainStage
 //---------------------------------------------------------------------------
 #include "SniperVsZombie_MainStage.h"
-#include "SniperVsZombie_Enemy.h"
+#include "ObjectNames.h"
+#include "StageConfig.h"
 #include "SniperVsZombie_City.h"
 #include "SniperVsZombie_Sky.h"
 #include "SniperVsZombie_WoodTower.h"
 #include "SniperVsZombie_Helicopter.h"
 #include "SniperVsZombie_Camera.h"
+#include "SniperVsZombie_Player.h"
 #include "SniperVsZombie_Gate.h"
 #include "SniperVsZombie_GameOver.h"
-#include "Random.h"
 #include <Game/Component/ComponentBlackScreen.h>
-#include <vector>
+#include <algorithm>
 
 namespace SniperVsZombie {
-static const float3 PLAYER_SPAWN_POSITION = float3{447.147f, 231.806f, 585.323f};
 
-//Enemy Spawn points
-static const std::vector<float3> enemySpawnPos = {
-    { -62.530f, 28.521f, 309.090f},
-    {-358.739f, 24.193f, 501.069f},
-    { 460.635f, 18.468f, 707.177f},
-};
-
-//Waypoints each enemy walks through before reaching the gate.
-//enemyPathFinding[i] is the path used by an enemy spawned at enemySpawnPos[i].
-static const std::vector<std::vector<float3>> enemyPathFinding = {
-    {{236.747f, 0.139f, 316.820f}, {233.324f, 0.139f, 671.936f}, {70.552f, 0.139f, 726.139f}},
-    {{-332.641f, 0.139f, 685.004f}, {64.192f, 0.139f, 719.587f}},
-    {{254.435f, 0.139f, 678.518}, {64.192f, 0.139f, 719.587f}},
-};
-
-void SniperVsZombie_MainStage::AddScore(int num)
-{
-    score_ += num;
-}
 //! @brief 初期化
 //! @return 初期化済み
 bool SniperVsZombie_MainStage::Init()
 {
-    //GATE
-    auto   gate      = Scene::Object::Create<Gate>();
-    float3 gatePos   = {67.726, 0.911, 760.512};
-    float3 gateScale = {0.75f, 0.75f, 0.75f};
-    gate->SetTranslate(gatePos);
-    gate->SetScaleAxisXYZ(gateScale);
-    gate->SetRotationAxisXYZ({0.0f, 90.0f, 0.0f});
-    gateMaxHP_ = gate->GetMaxHP();
+    ResetStageState();
 
-    gatePos_ = gatePos;    // save it so PostDraw can use it for the arrow marker
+    //GATE
+    auto gate = Scene::Object::Create<Gate>();
+    gate->SetTranslate(Config::GATE_POSITION);
+    gate->SetScaleAxisXYZ(Config::GATE_SCALE);
+    gate->SetRotationAxisXYZ(Config::GATE_ROTATION);
+    gateMaxHP_ = gate->GetMaxHP();
+    gateHP_    = gate->GetHP();
+    gatePos_   = Config::GATE_POSITION;    // save it so PostDraw can use it for the arrow marker
 
     //CAMERA
-    auto camera = Scene::Object::Create<Camera>()->SetTranslate(PLAYER_SPAWN_POSITION);
-    camera->SetRotationAxisXYZ({0.0f, -180.0f, 0.0f});
+    auto camera = Scene::Object::Create<Camera>()->SetTranslate(Config::PLAYER_SPAWN_POSITION);
+    camera->SetRotationAxisXYZ(Config::PLAYER_SPAWN_ROTATION);
 
-    //ENEMY - first one goes out right away, rest come from the spawn timer in Update()
-    CreateEnemy();
+    //PLAYER - hit body + HP. view and shooting stay in the Camera above(プレイヤー。当たり判定とHP。視点と射撃は上のCamera)
+    auto player  = Scene::Object::Create<Player>()->SetTranslate(Config::PLAYER_SPAWN_POSITION + Config::PLAYER_EYE_TO_BODY);
+    playerStats_ = player->GetComponent<ComponentPlayerStats>();
 
     //MAP
-    {
-        Scene::Object::Create<City>();
-        auto   woodTower     = Scene::Object::Create<WoodTower>();
-        float3 watchTowerPos = {437.0f, 100.0f, 550.0f};
-        woodTower->SetTranslate({watchTowerPos});
-        woodTower->SetRotationAxisXYZ({0.0f, -90.0f, 0.0f});
+    CreateMap();
 
-        //Sky
-        Scene::Object::Create<Sky>();
+    //ZOMBIES - every death goes to OnZombieKilled(ゾンビ。全ての死亡はOnZombieKilledへ)
+    spawner_.SetOnZombieKilled([this](const ComponentEnemyDeath::KillInfo& kill) { OnZombieKilled(kill); });
 
-        auto   helicopter = Scene::Object::Create<Helicopter>();
-        float3 heliPos    = {1.360f, 414.269f, 700.566f};
-        float3 heliScale  = {0.75f, 0.75f, 0.75f};
-        float3 heliRot    = {0.0f, -153.0f, 0.0f};
-        helicopter->SetTranslate(heliPos);
-        helicopter->SetScaleAxisXYZ(heliScale);
-        helicopter->SetRotationAxisXYZ(heliRot);
-    }
+    //first one goes out right away, the rest come from the spawner timer in Update()(最初の1体はすぐ出す。残りはUpdateのスポナータイマーから)
+    spawner_.SpawnZombie(ZombieType::Normal);
+
+    //TEST: stalker right away. remove this line when the stalker is tuned(テスト: すぐストーカーを出す。調整が終わったらこの行を消す)
+    spawner_.SpawnZombie(ZombieType::Stalker);
 
     //UI
     {
         hitMarkerHandle_    = LoadGraph("data/Game/UI/hitmarker2.png");
         hitMarkerRedHandle_ = LoadGraph("data/Game/UI/hitmarker2_headshot.png");    // red version for headshots
-        hitmarkerAlpha_     = 0;
-
-        arrowHandle_ = LoadGraph("data/Game/UI/arrow.png");    // gate direction marker
+        arrowHandle_        = LoadGraph("data/Game/UI/arrow.png");                  // gate direction marker
     }
 
     //EFFECT
@@ -93,71 +65,55 @@ bool SniperVsZombie_MainStage::Init()
 
     //BLACK SCREEN TRANSITION
     auto blackScreenObj = Scene::Object::Create<Object>();
-    blackScreenObj->SetName("BlackScreen");
+    blackScreenObj->SetName(Names::BLACK_SCREEN);
     blackScreen_ = blackScreenObj->AddComponent<ComponentBlackScreen>();
     blackScreen_->StartFadeIn();    // start fully black, fade INTO the stage
 
     return true;
 }
 
-void SniperVsZombie_MainStage::IncreaseEnemyCount()
+void SniperVsZombie_MainStage::ResetStageState()
 {
-    enemiesCurrentCount_++;
+    spawner_.Reset();
+
+    score_               = 0;
+    isGameOver_          = false;
+    isWin_               = false;
+    civilianSaved_       = 0;
+    civilianSaveTime_    = Config::CIVILIAN_SAVE_INTERVAL;
+    hitmarkerAlpha_      = 0;
+    hitmarkerIsHeadshot_ = false;
+    arrowTimer_          = 0.0f;
 }
 
-void SniperVsZombie_MainStage::DecreaseEnemyCount()
+void SniperVsZombie_MainStage::CreateMap()
 {
-    enemiesCurrentCount_--;
+    Scene::Object::Create<City>();
+
+    auto woodTower = Scene::Object::Create<WoodTower>();
+    woodTower->SetTranslate(Config::WOOD_TOWER_POSITION);
+    woodTower->SetRotationAxisXYZ(Config::WOOD_TOWER_ROTATION);
+
+    Scene::Object::Create<Sky>();
+
+    auto helicopter = Scene::Object::Create<Helicopter>();
+    helicopter->SetTranslate(Config::HELI_POSITION);
+    helicopter->SetScaleAxisXYZ(Config::HELI_SCALE);
+    helicopter->SetRotationAxisXYZ(Config::HELI_ROTATION_STAGE);
 }
 
-void SniperVsZombie_MainStage::CreateEnemy()
+void SniperVsZombie_MainStage::OnZombieKilled(const ComponentEnemyDeath::KillInfo& kill)
 {
-    // cap on how many enemies can be ALIVE at once, not how many were ever spawned
-    if(enemiesCurrentCount_ >= MAX_ENEMIES)
-        return;
-
-    int spawnIndex = rand() % static_cast<int>(enemySpawnPos.size());
-
-    auto newEnemy = Scene::Object::Create<Enemy>();
-    newEnemy->SetMoveSpeed(GetRandomF(0.1f, 0.3f));
-    newEnemy->SetTranslate(enemySpawnPos[spawnIndex]);
-    newEnemy->SetPath(enemyPathFinding[spawnIndex]);
+    PlayHitEffect(kill.position);
+    TriggerHitmark(kill.headshot);
+    AddScore(kill.score);
 }
 
-void SniperVsZombie_MainStage::UpdateSpawnTimer()
+void SniperVsZombie_MainStage::PlayHitEffect(const float3& position)
 {
-    time_to_spawn_enemy -= GetDeltaTime();
-}
-
-void SniperVsZombie_MainStage::SetIntervalSpawnTime(float newTimer)
-{
-    time_to_spawn_enemy_interval = newTimer;
-}
-
-void SniperVsZombie_MainStage::UpdateCivilian()
-{
-    if(civilianSaveTime_ >= 0.0f) {
-        civilianSaveTime_ -= GetDeltaTime();
-    }
-    else {
-        civilianSaveTime_ = civilianSaveTimeInterval_;
-
-        //Saved civilian every 5s
-        if(civilianSaved_ < 100)
-            civilianSaved_++;
-    }
-}
-
-void SniperVsZombie_MainStage::StageDifficultyUpdate()
-{
-    // how far the stage is (0.0 = just started, 1.0 = all civilians saved)
-    float rate = static_cast<float>(civilianSaved_) / static_cast<float>(civilianTotalCount_);
-    rate       = std::clamp(rate, 0.0f, 1.0f);
-
-    // interval goes from 5.0s (chill start) down to 0.5s (crazy end)
-    float newInterval = 5.0f - (5.0f - 0.5f) * rate;
-
-    SetIntervalSpawnTime(newInterval);
+    int play_handle = PlayEffekseer3DEffect(hitEffectHandle_);
+    SetPosPlayingEffekseer3DEffect(play_handle, position.x, position.y + 10.0f, position.z);
+    SetScalePlayingEffekseer3DEffect(play_handle, 5.0f, 5.0f, 5.0f);
 }
 
 void SniperVsZombie_MainStage::TriggerHitmark(bool isHeadshot)
@@ -166,14 +122,36 @@ void SniperVsZombie_MainStage::TriggerHitmark(bool isHeadshot)
     hitmarkerIsHeadshot_ = isHeadshot;
 }
 
-void SniperVsZombie_MainStage::OnGameOver(bool isWin)
+void SniperVsZombie_MainStage::AddScore(int num)
+{
+    score_ += num;
+}
+
+void SniperVsZombie_MainStage::UpdateCivilian()
+{
+    civilianSaveTime_ -= GetDeltaTime();
+    if(civilianSaveTime_ < 0.0f) {
+        civilianSaveTime_ = Config::CIVILIAN_SAVE_INTERVAL;
+
+        //1 civilian saved every CIVILIAN_SAVE_INTERVAL seconds(CIVILIAN_SAVE_INTERVAL秒ごとに1人救出)
+        if(civilianSaved_ < Config::CIVILIAN_TOTAL)
+            civilianSaved_++;
+    }
+}
+
+float SniperVsZombie_MainStage::GetStageProgress() const
+{
+    return std::clamp(static_cast<float>(civilianSaved_) / static_cast<float>(Config::CIVILIAN_TOTAL), 0.0f, 1.0f);
+}
+
+void SniperVsZombie_MainStage::OnGameOver(bool isWin, bool breakGate)
 {
     isGameOver_ = true;
     isWin_      = isWin;
 
-    //if the zombies break in
-    if(!isWin) {
-        if(auto gate = Scene::Object::Get<Gate>("Gate")) {
+    //play the broken gate only when zombies broke it, not when the player died(ゲートが壊された時だけ壊れ演出。プレイヤー死亡では出さない)
+    if(breakGate) {
+        if(auto gate = Scene::Object::Get<Gate>(Names::GATE)) {
             gate->DestroyGate();
         }
     }
@@ -189,45 +167,35 @@ void SniperVsZombie_MainStage::OnGameOver(bool isWin)
 
 void SniperVsZombie_MainStage::Update()
 {
-    //ENEMY SPAWN - keeps going as long as we're under the live enemy cap
-    if(enemiesCurrentCount_ < MAX_ENEMIES) {
-        if(time_to_spawn_enemy <= 0.0f) {
-            time_to_spawn_enemy = time_to_spawn_enemy_interval;
-            CreateEnemy();
-        }
-        else {
-            UpdateSpawnTimer();
-        }
-    }
+    //ZOMBIES - no new zombies once the game is over(ゾンビ。ゲーム終了後は新しく出さない)
+    if(!isGameOver_)
+        spawner_.Update(GetDeltaTime(), GetStageProgress());
 
     //Update civilians count
     UpdateCivilian();
 
     //Get gate HP
-    if(auto gate = Scene::Object::Get<Gate>("Gate")) {
+    if(auto gate = Scene::Object::Get<Gate>(Names::GATE)) {
         gateHP_ = gate->GetHP();
     }
 
     //Check Gameover
-    if(gateHP_ <= 0) {
-        if(!isGameOver_) {
-            OnGameOver(false);
-        }
-    }
-    else if(civilianSaved_ >= civilianTotalCount_) {
-        if(!isGameOver_) {
-            OnGameOver(true);
-        }
-    }
+    if(!isGameOver_) {
+        bool isPlayerDead = false;
+        if(auto stats = playerStats_.lock())
+            isPlayerDead = stats->IsDead();
 
-    //Stage Difficulty adjust (lower spawn interval the more civilians saved)
-    StageDifficultyUpdate();
+        if(gateHP_ <= 0)
+            OnGameOver(false, true);    //lose, gate broke(負け。ゲートが壊れた)
+        else if(isPlayerDead)
+            OnGameOver(false, false);    //lose, player died(負け。プレイヤーが死んだ)
+        else if(civilianSaved_ >= Config::CIVILIAN_TOTAL)
+            OnGameOver(true, false);    //win(勝ち)
+    }
 
     //Hit marker UI
-    {
-        if(hitmarkerAlpha_ > 0)
-            hitmarkerAlpha_ -= 3;
-    }
+    if(hitmarkerAlpha_ > 0)
+        hitmarkerAlpha_ -= 3;
 
     //GATE ARROW INDICATOR - tick the bounce timer every frame
     arrowTimer_ += GetDeltaTime();
@@ -237,28 +205,6 @@ void SniperVsZombie_MainStage::Exit()
 {
     DeleteEffekseerEffect(hitEffectHandle_);
 }
-
-////align 0 = left, align 1 = middle, align 2 = right
-//void DrawTextWithAlign(const char* message, int color, int offsetX = 0, int offsetY = 0, int align = 0)
-//{
-//	// 書式付き文字列の描画幅・高さ・行数を取得する
-//	s32 width;		   // 幅
-//	s32 height;		   // 高さ
-//	s32 line_count;	   // 行数
-//	GetDrawFormatStringSize(&width, &height, &line_count, message);
-
-//	//Position
-//	s32 x;
-//	if(align == 0)
-//		x = 0;
-//	if(align == 1)
-//		x = WINDOW_W / 2 - (width / 2);
-//	if(align == 2)
-//		x = (WINDOW_W - width);
-
-//	s32 y = 32;
-//	DrawFormatString(x + offsetX, y + offsetY, color, message);
-//}
 
 void SniperVsZombie_MainStage::PostDraw()
 {
@@ -360,10 +306,10 @@ void SniperVsZombie_MainStage::PostDraw()
             s32 x = 10;
             s32 y = height * 5 + 32;
 
-            float rate  = static_cast<float>(civilianSaved_) / static_cast<float>(civilianTotalCount_);
+            float rate  = static_cast<float>(civilianSaved_) / static_cast<float>(Config::CIVILIAN_TOTAL);
             int   color = GetColor(static_cast<int>(255.0f * (1.0f - rate)), static_cast<int>(255.0f * rate), 0);
 
-            DrawFormatString(x, y, color, message, civilianSaved_, civilianTotalCount_);
+            DrawFormatString(x, y, color, message, civilianSaved_, Config::CIVILIAN_TOTAL);
         }
     }
 
@@ -397,6 +343,10 @@ void SniperVsZombie_MainStage::PostDraw()
             DrawRotaGraphF(x, y, scale, 0.0f, arrowHandle_, TRUE);
         }
     }
+
+    //PLAYER HP UI + red hit flash(プレイヤーHP表示と被弾の赤フラッシュ)
+    if(auto stats = playerStats_.lock())
+        stats->DrawHUD();
 
     //BLACK SCREEN TRANSITION - draw LAST so it covers everything above during fades
     blackScreen_->DrawBlackScreen();

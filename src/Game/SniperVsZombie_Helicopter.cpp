@@ -1,9 +1,10 @@
 ﻿//---------------------------------------------------------------------------
-//!	@file	TutorialX_Player.cpp
-//! @brief	TutorialX_Player
+//!	@file	SniperVsZombie_Helicopter.cpp
+//! @brief	SniperVsZombie_Helicopter
 //---------------------------------------------------------------------------
 
 #include "SniperVsZombie_Helicopter.h"
+#include "ObjectNames.h"
 #include "SniperVsZombie_MainStage.h"
 
 namespace SniperVsZombie {
@@ -14,7 +15,7 @@ bool Helicopter::Init()
 {
     Super::Init();
 
-    SetName("Helicopter");
+    SetName(Names::HELICOPTER);
 
     float3 position{0.0f, 0.0f, 0.0f};
     float3 scale{1.0f, 1.0f, 1.0f};

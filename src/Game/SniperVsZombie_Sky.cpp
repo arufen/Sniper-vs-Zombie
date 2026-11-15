@@ -1,9 +1,10 @@
 ﻿//---------------------------------------------------------------------------
-//!	@file	TutorialX_Player.cpp
-//! @brief	TutorialX_Player
+//!	@file	SniperVsZombie_Sky.cpp
+//! @brief	SniperVsZombie_Sky
 //---------------------------------------------------------------------------
 
 #include "SniperVsZombie_Sky.h"
+#include "ObjectNames.h"
 #include "SniperVsZombie_MainStage.h"
 
 namespace SniperVsZombie {
@@ -14,7 +15,7 @@ bool Sky::Init()
 {
     Super::Init();
 
-    SetName("Sky");
+    SetName(Names::SKY);
 
     // lambda helper to spawn a Sky piece fast
     auto makeSky = [this](float3 position, float3 scale) {

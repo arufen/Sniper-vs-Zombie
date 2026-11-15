@@ -1,7 +1,8 @@
 ﻿//---------------------------------------------------------------------------
-//!	@file	Tutorial_X.h
-//! @brief	Tutorial_X
+//!	@file	SniperVsZombie_MainMenu.h
+//! @brief	SniperVsZombie_MainMenu
 //---------------------------------------------------------------------------
+#pragma once
 #include <System/Scene.h>
 #include "Float2.h"
 #include <Game/Component/ComponentBlackScreen.h>

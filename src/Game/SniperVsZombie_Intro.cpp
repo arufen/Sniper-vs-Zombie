@@ -3,6 +3,7 @@
 //! @brief	Story intro screen, shown before the Main Menu
 //---------------------------------------------------------------------------
 #include "SniperVsZombie_Intro.h"
+#include "ObjectNames.h"
 #include "SniperVsZombie_MainMenu.h"
 #include <Game/Component/ComponentBlackScreen.h>
 
@@ -39,7 +40,7 @@ bool SniperVsZombie_Intro::Init()
 {
     //BLACK SCREEN TRANSITION
     auto blackScreenObj = Scene::Object::Create<Object>();
-    blackScreenObj->SetName("BlackScreen");
+    blackScreenObj->SetName(Names::BLACK_SCREEN);
     blackScreen_ = blackScreenObj->AddComponent<ComponentBlackScreen>();
     blackScreen_->StartFadeIn();    // start fully black, fade INTO the intro
 
