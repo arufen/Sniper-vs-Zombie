@@ -19,7 +19,7 @@ bool City::Init()
 
     // lambda helper to spawn a City piece fast
     auto makeCity = [this](float3 position, float3 scale) {
-        auto g = AddComponent<ComponentModel>("data/Game/Models/Stage/LowPolyCity.mv1");
+        auto g = AddComponent<ComponentModel>("data/Game/Models/Stage/city_normal_fix.mv1");
         SetScaleAxisXYZ(scale);
         SetTranslate(position);
         return g;

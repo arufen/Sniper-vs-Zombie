@@ -4,6 +4,7 @@
 //---------------------------------------------------------------------------
 #include "SniperVsZombie_MainStage.h"
 #include "ObjectNames.h"
+#include "ShaderCamera.h"
 #include "StageConfig.h"
 #include "SniperVsZombie_City.h"
 #include "SniperVsZombie_Sky.h"
@@ -95,6 +96,7 @@ void SniperVsZombie_MainStage::CreateMap()
     woodTower->SetRotationAxisXYZ(Config::WOOD_TOWER_ROTATION);
 
     Scene::Object::Create<Sky>();
+    Scene::Object::Create<ShaderCamera>();    //sends the real camera position to ps_model.fx(本当のカメラ位置をps_model.fxへ送る)
 
     auto helicopter = Scene::Object::Create<Helicopter>();
     helicopter->SetTranslate(Config::HELI_POSITION);

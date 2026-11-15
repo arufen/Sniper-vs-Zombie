@@ -28,6 +28,7 @@ inline constexpr const char* NORMAL_ZOMBIE = "NormalZombie";
 inline constexpr const char* STALKER       = "Stalker";
 
 //UI / system(UI・システム)
-inline constexpr const char* BLACK_SCREEN = "BlackScreen";
+inline constexpr const char* BLACK_SCREEN  = "BlackScreen";
+inline constexpr const char* SHADER_CAMERA = "ShaderCamera";
 
 }    // namespace SniperVsZombie::Names
