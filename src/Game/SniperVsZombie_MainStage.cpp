@@ -14,6 +14,8 @@
 #include "SniperVsZombie_Player.h"
 #include "SniperVsZombie_Gate.h"
 #include "SniperVsZombie_GameOver.h"
+#include "HudText.h"
+#include <Game/Component/ComponentFPSCameraController.h>
 #include <Game/Component/ComponentBlackScreen.h>
 #include <algorithm>
 
@@ -206,113 +208,65 @@ void SniperVsZombie_MainStage::Update()
 void SniperVsZombie_MainStage::Exit()
 {
     DeleteEffekseerEffect(hitEffectHandle_);
+    Hud::ReleaseFont();    //free the HUD font, it is made again next time it is needed(HUDフォントを解放。次に必要な時に作り直される)
 }
 
 void SniperVsZombie_MainStage::PostDraw()
 {
     __super::PostDraw();
 
-    //SCORE
-    DrawFormatString(10, 50, GetColor(255, 255, 255), "スコア: %d", score_);
+    //----------------------------------------------------------
+    // HUD - all text uses Hud:: = bigger font with a black outline(HUD - 文字は全部Hud::を使う=大きめで黒い縁取り付き)
+    //----------------------------------------------------------
+    const int          line  = Hud::GetLineHeight();
+    const unsigned int white = GetColor(255, 255, 255);
 
-    //HP UI
+    //SCORE(スコア)
+    const int left_y = 50;
+    Hud::DrawLabel(10, left_y, white, "スコア: %d", score_);
+
+    //GATE HP: text, then the bar under it(ゲートHP: 文字、その下にバー)
     {
-        float HP           = gateHP_;
-        float maxHP        = gateMaxHP_;
-        float x1           = 10.0f;
-        float y1           = 100.0f;
-        float x2           = 200.0f;
-        float y2           = 130.0f;
-        int   outlineColor = GetColor(0, 0, 0);
-        //Outline
-        DrawBoxAA(x1, y1, x2, y2, outlineColor, 1);
-        //inward offset
-        float offsetX = 5.0f;
-        float offsetY = 5.0f;
-        //Main color
-        int mainColor = GetColor(0, 255, 0);
+        Hud::DrawLabel(10, left_y + line, white, "ドア HP: %d", static_cast<int>(gateHP_));
 
-        //  calculate HP ratio (0.0 ~ 1.0)
-        float hpRatio = std::clamp(HP / maxHP, 0.0f, 1.0f);
+        float x1      = 10.0f;
+        float y1      = static_cast<float>(left_y + line * 2 + 4);
+        float x2      = 270.0f;    //was 200, a little bigger now(以前は200。少し大きく)
+        float y2      = y1 + 34.0f;
+        float offset  = 5.0f;    //inward offset(内側の余白)
+        float hpRatio = std::clamp(gateHP_ / gateMaxHP_, 0.0f, 1.0f);
 
-        //  inner bar's max width (based on outline minus offsets)
-        float innerMaxWidth = (x2 - offsetX) - (x1 + offsetX);
+        DrawBoxAA(x1, y1, x2, y2, GetColor(0, 0, 0), 1);    //outline(枠)
 
-        //  scale width according to current HP
-        float innerX2 = (x1 + offsetX) + innerMaxWidth * hpRatio;
-
-        //Text Hp
-        DrawFormatString(10, 70, GetColor(255, 255, 255), "ドア HP: %d", static_cast<int>(gateHP_));
-
-        //Main HP
-        DrawBoxAA(x1 + offsetX, y1 + offsetY, innerX2, y2 - offsetY, mainColor, 1);
+        float innerMaxWidth = (x2 - offset) - (x1 + offset);
+        float innerX2       = (x1 + offset) + innerMaxWidth * hpRatio;
+        DrawBoxAA(x1 + offset, y1 + offset, innerX2, y2 - offset, GetColor(0, 255, 0), 1);
     }
 
-    //Tutorial UI
+    //CIVILIANS: color goes red -> green as more are saved(避難者: 救出が増えると赤から緑へ)
     {
-        int tutorialColor = GetColor(255, 255, 255);
-        {
-            // 書式付き文字列の描画幅・高さ・行数を取得する
-            const char* message = "右クリックでカメラを動かす";
-            s32         width;         // 幅
-            s32         height;        // 高さ
-            s32         line_count;    // 行数
-            GetDrawFormatStringSize(&width, &height, &line_count, message);
+        float rate  = static_cast<float>(civilianSaved_) / static_cast<float>(Config::CIVILIAN_TOTAL);
+        int   color = GetColor(static_cast<int>(255.0f * (1.0f - rate)), static_cast<int>(255.0f * rate), 0);
+        Hud::DrawLabel(10, left_y + line * 3 + 48, color, "避難者: %d / %d", civilianSaved_, Config::CIVILIAN_TOTAL);
+    }
 
-            // センタリング
-            s32 x = (WINDOW_W - width);
-            s32 y = height + 32;
+    //TUTORIAL (top right). the camera line changes when the mouse is locked(操作説明(右上)。マウスロック中はカメラの行が変わる)
+    {
+        bool locked = false;
+        if(auto camera = Scene::Object::Get<Camera>())
+            if(auto controller = camera->GetComponent<ComponentFPSCameraController>())
+                locked = controller->IsMouseLocked();
 
-            DrawFormatString(x, y, tutorialColor, message);
-        }
+        const int right_x = WINDOW_W - 10;
+        const int top_y   = 50;
 
-        {
-            // 書式付き文字列の描画幅・高さ・行数を取得する
-            const char* message = "左クリックで弾を撃つ";
-            s32         width;         // 幅
-            s32         height;        // 高さ
-            s32         line_count;    // 行数
-            GetDrawFormatStringSize(&width, &height, &line_count, message);
+        Hud::DrawLabelRight(right_x, top_y, white, locked ? "マウスでカメラを動かす" : "右クリックでカメラを動かす");
+        Hud::DrawLabelRight(right_x, top_y + line, white, "左クリックで弾を撃つ");
+        Hud::DrawLabelRight(right_x, top_y + line * 2, white, "Eで覗き込み");
 
-            // センタリング
-            s32 x = (WINDOW_W - width);
-            s32 y = height * 2 + 32;
-
-            DrawFormatString(x, y, tutorialColor, message);
-        }
-
-        {
-            // 書式付き文字列の描画幅・高さ・行数を取得する
-            const char* message = "Eで覗き込み";
-            s32         width;         // 幅
-            s32         height;        // 高さ
-            s32         line_count;    // 行数
-            GetDrawFormatStringSize(&width, &height, &line_count, message);
-
-            // センタリング
-            s32 x = (WINDOW_W - width);
-            s32 y = height * 3 + 32;
-
-            DrawFormatString(x, y, tutorialColor, message);
-        }
-
-        {
-            // 書式付き文字列の描画幅・高さ・行数を取得する
-            const char* message = "避難者: %d / %d";
-            s32         width;         // 幅
-            s32         height;        // 高さ
-            s32         line_count;    // 行数
-            GetDrawFormatStringSize(&width, &height, &line_count, message);
-
-            // センタリング
-            s32 x = 10;
-            s32 y = height * 5 + 32;
-
-            float rate  = static_cast<float>(civilianSaved_) / static_cast<float>(Config::CIVILIAN_TOTAL);
-            int   color = GetColor(static_cast<int>(255.0f * (1.0f - rate)), static_cast<int>(255.0f * rate), 0);
-
-            DrawFormatString(x, y, color, message, civilianSaved_, Config::CIVILIAN_TOTAL);
-        }
+        //green when ON, so the player sees the state at a glance(ONの時は緑。状態がひと目で分かるように)
+        const unsigned int lock_color = locked ? GetColor(80, 255, 80) : white;
+        Hud::DrawLabelRight(right_x, top_y + line * 3, lock_color, "Qでマウスロック: %s", locked ? "ON" : "OFF");
     }
 
     //Hitmarker UI

@@ -15,6 +15,14 @@ public:
 
     void LateDraw() override;
 
+    void Exit() override;
+
+    //key that turns mouse lock on/off(マウスロックを切り替えるキー)
+    static constexpr int MOUSE_LOCK_KEY = KEY_INPUT_Q;
+
+    //true = the mouse turns the camera without holding right click(true=右クリックを押さなくてもマウスでカメラが回る)
+    bool IsMouseLocked() const { return mouse_locked_; }
+
     ComponentFPSCameraControllerPtr SetEyePosition(float3 pos);
 
     ComponentFPSCameraControllerPtr SetMouseSensitivity(float sensitivity);
@@ -46,6 +54,14 @@ private:
     float fov_ = 60.0f * DegToRad;    //!< 画角
 
     bool isZoom_ = false;    //!< ズーム中かどうか
+
+    //show/hide the cursor and keep it in the middle while locked(ロック中はカーソルを隠して中央に置く)
+    void ApplyCursor(bool lock_now);
+
+    bool mouse_locked_  = false;    //the player's choice, toggled with MOUSE_LOCK_KEY(プレイヤーの選択。MOUSE_LOCK_KEYで切り替え)
+    bool cursor_hidden_ = false;    //what we last told the system, so we only change it when needed(最後にシステムへ伝えた状態。必要な時だけ変える)
+    s32  mouse_prev_x_  = 0;        //cursor position last frame, for the mouse movement(前フレームのカーソル位置。マウス移動量用)
+    s32  mouse_prev_y_  = 0;
 
     int scopeHandle;
 
