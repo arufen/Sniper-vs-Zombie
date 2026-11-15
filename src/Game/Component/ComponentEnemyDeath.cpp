@@ -22,6 +22,12 @@ ComponentEnemyDeathPtr ComponentEnemyDeath::SetHeadCollision(const std::shared_p
     return std::dynamic_pointer_cast<ComponentEnemyDeath>(shared_from_this());
 }
 
+ComponentEnemyDeathPtr ComponentEnemyDeath::SetFeetCollision(const std::shared_ptr<ComponentCollisionCapsule>& feet)
+{
+    feet_collision_ = feet;
+    return std::dynamic_pointer_cast<ComponentEnemyDeath>(shared_from_this());
+}
+
 ComponentEnemyDeathPtr ComponentEnemyDeath::SetScore(int body_score, int head_score)
 {
     body_score_ = body_score;
@@ -81,8 +87,20 @@ void ComponentEnemyDeath::Die()
     if(on_die_)
         on_die_();
 
-    //there are 3 capsules (feet, body, head), RemoveComponent only removes one at a time, so loop until all are gone(カプセルは3つあり、RemoveComponentは1つずつなので、全部消えるまでループ)
-    while(auto col = owner->GetComponent<ComponentCollisionCapsule>()) owner->RemoveComponent(col);
+    //keep the feet so the body falls. a jump may have turned gravity and the capsule off, so turn both back on(体が落ちるよう足は残す。ジャンプが重力とカプセルを切っている場合があるので両方戻す)
+    auto feet = feet_collision_.lock();
+    if(feet) {
+        feet->SetStatus(StatusBit::Enable, true);
+        feet->UseGravity(true);
+        //only the ground. bullets, zombies and the player now pass through the corpse(地面とだけ当たる。弾・ゾンビ・プレイヤーは死体をすり抜ける)
+        feet->SetHitCollisionGroup(static_cast<u32>(ComponentCollision::CollisionGroup::GROUND));
+    }
+
+    //remove every other capsule (body, head) so the corpse cannot be shot or block anyone(他のカプセル(胴体・頭)は全部消す。死体が撃たれたり邪魔したりしないように)
+    for(auto& col : owner->GetComponents<ComponentCollisionCapsule>()) {
+        if(col != feet)
+            owner->RemoveComponent(col);
+    }
 }
 
 void ComponentEnemyDeath::GUI()

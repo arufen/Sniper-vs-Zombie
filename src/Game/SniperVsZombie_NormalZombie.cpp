@@ -36,6 +36,7 @@ bool NormalZombie::Init()
     //DEATH(死亡). score / hit marker are wired by the spawner with SetOnKilled(スコアやヒットマーカーはスポナーがSetOnKilledで繋ぐ)
     auto death = AddComponent<ComponentEnemyDeath>();
     death->SetHeadCollision(body.head);
+    death->SetFeetCollision(body.feet);
     death->SetOnDie([this]() {
         //a dead zombie does not walk or attack. ComponentStateWalk runs its own Update, so it must be removed too(死んだらもう歩かない・攻撃しない。ComponentStateWalkは自分でUpdateするので外す)
         RemoveComponent<ComponentWaypointFollower>();

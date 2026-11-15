@@ -18,7 +18,7 @@ ZombieBodyParts AddZombieBody(Object* owner)
         {"attack",         "data/Game/Models/Enemy/Anims/Attack.mv1", 0, 1.0f}, // Attack
         {  "walk",           "data/Game/Models/Enemy/Anims/Walk.mv1", 0, 3.0f}, // Walk
         {  "dead",           "data/Game/Models/Enemy/Anims/Dead.mv1", 0, 1.0f}, // Dead
-        {  "jump", "data/Game/Models/Enemy/Anims/Jump_NoInPlace.mv1", 0, 1.0f}, // Jump (TODO: Jump.mv1 is not tposing at start, failed to load)
+        {  "jump", "data/Game/Models/Enemy/Anims/Jump_NoInPlace.mv1", 0, 1.5f}, // Jump
     });
 
     //FEET - to stand(足。立つ用)

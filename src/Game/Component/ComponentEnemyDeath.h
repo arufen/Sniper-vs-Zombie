@@ -28,6 +28,10 @@ public:
     //which capsule is the head, so we can tell a headshot(どのカプセルが頭か。ヘッドショット判定用)
     ComponentEnemyDeathPtr SetHeadCollision(const std::shared_ptr<ComponentCollision>& head);
 
+    //the gravity capsule. it stays after death so the body falls to the ground (e.g. killed mid-jump)(重力カプセル。死後も残して体を地面まで落とす。例: ジャンプ中に倒された)
+    //capsule, not ComponentCollision: only the shape classes have SetHitCollisionGroup(ComponentCollisionではなくカプセル: SetHitCollisionGroupは形状クラスにしか無い)
+    ComponentEnemyDeathPtr SetFeetCollision(const std::shared_ptr<ComponentCollisionCapsule>& feet);
+
     //points for a kill, body and headshot(キルのスコア。胴体とヘッドショット)
     ComponentEnemyDeathPtr SetScore(int body_score, int head_score);
 
@@ -53,7 +57,8 @@ public:
 private:
     void Die();
 
-    std::weak_ptr<ComponentCollision> head_collision_;    //weak so this does not keep the capsule alive(カプセルの寿命を握らないようweak)
+    std::weak_ptr<ComponentCollision>        head_collision_;    //weak so this does not keep the capsule alive(カプセルの寿命を握らないようweak)
+    std::weak_ptr<ComponentCollisionCapsule> feet_collision_;    //kept after death for falling(死後も落下用に残す)
 
     std::function<void()> on_die_;    //for the owner Object: stop its own behavior(所有Object用: 自分の行動を止める)
 

@@ -2,7 +2,12 @@
 #include <Game/Component/ComponentAIState.h>
 #include <Game/Component/ComponentWaypointFollower.h>
 #include <Game/Component/State/ComponentStateWalk.h>
+#include <System/Component/ComponentModel.h>
 #include <algorithm>
+
+namespace {
+constexpr const char* JUMP_ANIM = "jump";    //anim name from ZombieBody(ZombieBodyのアニメ名)
+}
 
 void ComponentStalkerJump::Init()
 {
@@ -11,12 +16,21 @@ void ComponentStalkerJump::Init()
     SetName<Component>("StalkerJump");
 }
 
+float ComponentStalkerJump::GetJumpAnimTime() const
+{
+    auto model = GetOwner()->GetComponent<ComponentModel>();
+    if(!model || model->GetPlayAnimationName() != JUMP_ANIM)
+        return -1.0f;
+
+    //no % needed: the anim plays once (no loop), so this stops growing at the end(%は不要: ループしないので終わりで増えなくなる)
+    return model->GetAnimationTime();
+}
+
 void ComponentStalkerJump::Update()
 {
     __super::Update();
 
-    auto        owner = GetOwner();
-    const float dt    = static_cast<float>(GetDeltaTime());
+    auto owner = GetOwner();
 
     switch(state_) {
     case State::Waiting:
@@ -36,20 +50,33 @@ void ComponentStalkerJump::Update()
             //look at where we will land, Y is ignored so it does not tilt(着地点の方を向く。Yは無視されるので傾かない)
             owner->SetRotationToPositionWithLimit(jump_points_[jump_index_], 5.0f);
 
-            crouch_left_ -= dt;
-            if(crouch_left_ <= 0.0f)
+            //take off on the exact anim frame where the feet leave the ground(足が離れるアニメのフレームで離陸)
+            if(GetJumpAnimTime() >= takeoff_time_)
                 StartJump();
             break;
         }
 
     case State::Jumping:
         {
-            t_ = std::min(1.0f, t_ + dt / jump_duration_);
+            //the arc reads the same clock as the anim, so they cannot drift apart(放物線はアニメと同じ時計を読むので、ずれない)
+            const float anim_time = GetJumpAnimTime();
+            t_                    = std::clamp((anim_time - takeoff_time_) / (land_time_ - takeoff_time_), 0.0f, 1.0f);
 
             owner->SetTranslate(ArcPosition(start_, jump_points_[jump_index_], t_));
 
-            if(t_ >= 1.0f)
+            //anim_time < 0 = something else replaced the jump anim, land now so we never get stuck in the air(<0 = 別アニメに変わった。空中で止まらないよう今着地)
+            if(t_ >= 1.0f || anim_time < 0.0f)
                 Land();
+            break;
+        }
+
+    case State::Recover:
+        {
+            //wait for the stand-up part of the anim to finish(アニメの起き上がり部分が終わるまで待つ)
+            auto        model     = owner->GetComponent<ComponentModel>();
+            const float anim_time = GetJumpAnimTime();
+            if(anim_time < 0.0f || anim_time >= anim_length_ || !model || !model->IsPlaying())
+                FinishRecover();
             break;
         }
 
@@ -82,12 +109,13 @@ void ComponentStalkerJump::StartCrouch()
     if(auto ai = owner->GetComponent<ComponentAIState>())
         ai->ClearTargetPosition();
 
-    //no crouch anim yet, the attack pose works as a "getting ready" pose(しゃがみアニメが無いので攻撃ポーズを構えとして使う)
+    //PlayAnimation, not NoSame: the 2nd jump must restart the anim and reset its timer to 0(NoSameではなくPlayAnimation: 2回目のジャンプでもアニメを最初から再生し、タイマーを0に戻す)
+    //no loop: the anim stops at the end, so GetAnimationTime() stops growing too(ループなし: 終わりで止まるので、GetAnimationTimeも増えなくなる)
     if(auto model = owner->GetComponent<ComponentModel>())
-        model->PlayAnimationNoSame("jump", true);
+        model->PlayAnimation(JUMP_ANIM, false);
 
-    crouch_left_ = crouch_time_;
-    state_       = State::Crouch;
+    t_     = 0.0f;
+    state_ = State::Crouch;
 }
 
 void ComponentStalkerJump::StartJump()
@@ -107,7 +135,12 @@ void ComponentStalkerJump::Land()
     SetFeetGravity(true);
 
     jump_index_++;
+    t_     = 1.0f;
+    state_ = State::Recover;
+}
 
+void ComponentStalkerJump::FinishRecover()
+{
     if(jump_index_ < jump_points_.size()) {
         //more jumps left, get ready for the next one(まだジャンプが残っている。次の準備)
         StartCrouch();
@@ -142,21 +175,18 @@ ComponentStalkerJumpPtr ComponentStalkerJump::SetFeetCollision(const std::shared
     return std::dynamic_pointer_cast<ComponentStalkerJump>(shared_from_this());
 }
 
-ComponentStalkerJumpPtr ComponentStalkerJump::SetJumpDuration(float seconds)
+ComponentStalkerJumpPtr ComponentStalkerJump::SetAnimTiming(float takeoff, float land, float length)
 {
-    jump_duration_ = std::max(0.05f, seconds);    //never 0, it is used to divide(割り算に使うので0にしない)
+    //keep the order takeoff < land <= length. land - takeoff is used to divide, so never 0(takeoff < land <= length の順を守る。land-takeoffで割るので0にしない)
+    takeoff_time_ = std::max(0.0f, takeoff);
+    land_time_    = std::max(takeoff_time_ + 0.05f, land);
+    anim_length_  = std::max(land_time_, length);
     return std::dynamic_pointer_cast<ComponentStalkerJump>(shared_from_this());
 }
 
 ComponentStalkerJumpPtr ComponentStalkerJump::SetJumpHeight(float height)
 {
     jump_height_ = height;
-    return std::dynamic_pointer_cast<ComponentStalkerJump>(shared_from_this());
-}
-
-ComponentStalkerJumpPtr ComponentStalkerJump::SetCrouchTime(float seconds)
-{
-    crouch_time_ = std::max(0.0f, seconds);
     return std::dynamic_pointer_cast<ComponentStalkerJump>(shared_from_this());
 }
 
@@ -181,14 +211,16 @@ void ComponentStalkerJump::GUI()
             if(ImGui::Button(u8"削除"))
                 GetOwner()->RemoveComponent(shared_from_this());
 
-            static const char* state_names[] = {"Waiting", "Crouch", "Jumping", "Done"};
+            static const char* state_names[] = {"Waiting", "Crouch", "Jumping", "Recover", "Done"};
             ImGui::Text(u8"状態: %s", state_names[static_cast<int>(state_)]);
             ImGui::Text(u8"ジャンプ: %d / %d", static_cast<int>(jump_index_), static_cast<int>(jump_points_.size()));
+            ImGui::Text(u8"アニメ時間: %.2f  放物線: %.2f", GetJumpAnimTime(), t_);
 
-            if(ImGui::DragFloat(u8"滞空時間(秒)", &jump_duration_, 0.01f, 0.05f, 5.0f))
-                jump_duration_ = std::max(0.05f, jump_duration_);
+            //drag these while watching the anim time above to line up the feet(上のアニメ時間を見ながら動かして足を合わせる)
+            float timing[3] = {takeoff_time_, land_time_, anim_length_};
+            if(ImGui::DragFloat3(u8"離陸/着地/終了(秒)", timing, 0.01f, 0.0f, 10.0f))
+                SetAnimTiming(timing[0], timing[1], timing[2]);
             ImGui::DragFloat(u8"ジャンプの高さ", &jump_height_, 0.5f);
-            ImGui::DragFloat(u8"跳ぶ前の待ち時間(秒)", &crouch_time_, 0.05f, 0.0f, 10.0f);
 
             ImGui::TreePop();
         }

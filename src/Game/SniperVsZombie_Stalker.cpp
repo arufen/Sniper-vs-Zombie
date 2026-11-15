@@ -9,6 +9,7 @@
 #include "Component/ComponentAIState.h"
 #include "Component/ComponentWaypointFollower.h"
 #include "Component/ComponentStalkerJump.h"
+#include "Component/ComponentRootMotionLock.h"
 #include "Component/ComponentPlayerAttack.h"
 #include "Component/ComponentEnemyDeath.h"
 #include "Component/State/ComponentStateWalk.h"
@@ -37,6 +38,9 @@ bool Stalker::Init()
     attack->SetTargetName(Names::PLAYER);
     attack->SetStatus(Component::StatusBit::Enable, false);
 
+    //the jump anim is NOT in place, but the arc already moves us. pin the hips so we do not move twice(ジャンプアニメはインプレースではないが、移動は放物線が担当。二重に動かないよう腰を固定)
+    AddComponent<ComponentRootMotionLock>()->SetAnimationName("jump");
+
     auto jump = AddComponent<ComponentStalkerJump>();
     jump->SetFeetCollision(body.feet);
     jump->SetOnFinished([this]() {
@@ -50,6 +54,7 @@ bool Stalker::Init()
     //DEATH(死亡). score / hit marker are wired by the spawner with SetOnKilled(スコアやヒットマーカーはスポナーがSetOnKilledで繋ぐ)
     auto death = AddComponent<ComponentEnemyDeath>();
     death->SetHeadCollision(body.head);
+    death->SetFeetCollision(body.feet);
     death->SetOnDie([this]() {
         //a dead stalker does not walk, jump or attack. ComponentStateWalk runs its own Update, so it must be removed too(死んだらもう歩かない・跳ばない・攻撃しない。ComponentStateWalkも外す)
         RemoveComponent<ComponentWaypointFollower>();
