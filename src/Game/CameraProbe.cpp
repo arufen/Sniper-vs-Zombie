@@ -23,6 +23,9 @@ bool CameraProbe::Init()
 
     SetName(Names::CAMERA_PROBE);
 
+    //keep working in F1 pause: F7/F8, numbers and "COPIED!" still update. delta time keeps running in pause(F1ポーズ中も動かす: F7/F8・数値・「COPIED!」も更新される。ポーズ中もデルタ時間は進む)
+    SetStatus(StatusBit::DisablePause, true);
+
     return true;
 }
 
@@ -107,7 +110,12 @@ void CameraProbe::PostDraw()
 
     const int old_font_size = GetFontSize();    //put it back after, other text uses the global size too(後で戻す。他の文字もグローバルサイズを使う)
     SetFontSize(16);
-    DrawFormatString(x, y, yellow, "CAMERA PROBE  [F4] debug cam %s  [F7] hide  [F8] copy", DebugCamera::IsUse() ? "ON" : "OFF");
+    DrawFormatString(x,
+                     y,
+                     yellow,
+                     "CAMERA PROBE  [F4] debug cam %s  [F1] pause %s  [F7] hide  [F8] copy",
+                     DebugCamera::IsUse() ? "ON" : "OFF",
+                     Scene::IsPause() ? "ON" : "OFF");
     DrawFormatString(x, y + 20, white, "eye    = {%.3f, %.3f, %.3f}", (float)eye_.x, (float)eye_.y, (float)eye_.z);
     DrawFormatString(x, y + 40, white, "target = {%.3f, %.3f, %.3f}", (float)target_.x, (float)target_.y, (float)target_.z);
     if(has_fps_)
