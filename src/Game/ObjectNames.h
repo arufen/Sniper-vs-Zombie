@@ -30,5 +30,6 @@ inline constexpr const char* STALKER       = "Stalker";
 //UI / system(UI・システム)
 inline constexpr const char* BLACK_SCREEN  = "BlackScreen";
 inline constexpr const char* SHADER_CAMERA = "ShaderCamera";
+inline constexpr const char* CAMERA_PROBE  = "CameraProbe";    //dev tool, Debug builds only(開発ツール。Debugビルドのみ)
 
 }    // namespace SniperVsZombie::Names

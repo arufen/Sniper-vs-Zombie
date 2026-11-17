@@ -159,6 +159,13 @@ float3 ComponentFPSCameraController::GetForwardVector(float offset) const
     return normalize(forward) * offset;
 }
 
+ComponentFPSCameraControllerPtr ComponentFPSCameraController::SetLookAngles(float yaw_deg, float pitch_deg)
+{
+    rotate_h_ = yaw_deg * DegToRad;
+    rotate_v_ = std::clamp(pitch_deg * DegToRad, limit_pitch_min_, limit_pitch_max_);    //same limit as the mouse(マウスと同じ制限)
+    return std::dynamic_pointer_cast<ComponentFPSCameraController>(shared_from_this());
+}
+
 ComponentFPSCameraControllerPtr ComponentFPSCameraController::SetEyePosition(float3 pos)
 {
     eye_position_ = pos;

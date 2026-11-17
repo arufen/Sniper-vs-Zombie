@@ -33,6 +33,12 @@ public:
 
     float3 GetForwardVector(float offset = 1.0f) const;
 
+    //look direction in degrees. x = yaw (left/right), y = pitch (+ = looking down)(視線の向き・度。x=左右、y=上下(+で下を向く))
+    float2 GetLookAngles() const { return float2(rotate_h_ * RadToDeg, rotate_v_ * RadToDeg); }
+
+    //set the look direction in degrees, e.g. where the player faces when control starts(視線の向きを度で設定。操作開始時に向く方向など)
+    ComponentFPSCameraControllerPtr SetLookAngles(float yaw_deg, float pitch_deg);
+
     void GUI() override;
 
 private:

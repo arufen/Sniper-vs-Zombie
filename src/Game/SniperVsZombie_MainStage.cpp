@@ -5,6 +5,7 @@
 #include "SniperVsZombie_MainStage.h"
 #include "ObjectNames.h"
 #include "ShaderCamera.h"
+#include "CameraProbe.h"
 #include "StageConfig.h"
 #include "SniperVsZombie_City.h"
 #include "SniperVsZombie_Sky.h"
@@ -99,6 +100,7 @@ void SniperVsZombie_MainStage::CreateMap()
 
     Scene::Object::Create<Sky>();
     Scene::Object::Create<ShaderCamera>();    //sends the real camera position to ps_model.fx(本当のカメラ位置をps_model.fxへ送る)
+    CreateCameraProbe();                      //dev tool: F7 show, F8 copy camera position. Debug only(開発ツール: F7表示、F8でカメラ位置をコピー。Debugのみ)
 
     auto helicopter = Scene::Object::Create<Helicopter>();
     helicopter->SetTranslate(Config::HELI_POSITION);
