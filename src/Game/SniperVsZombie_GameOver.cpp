@@ -176,7 +176,7 @@ void SniperVsZombie_GameOver::SetupSniperDown()
         auto model = body->AddComponent<ComponentModel>(Assets::PLAYER_MODEL);
         if(Sound::FileExists(Assets::PLAYER_ANIM_DEATH)) {
             model->SetAnimation({
-                {"death", Assets::PLAYER_ANIM_DEATH, 0, 1.0f}
+                {"death", Assets::PLAYER_ANIM_DEATH, 1, 1.0f}
             });
             model->PlayAnimation("death", false);
         }

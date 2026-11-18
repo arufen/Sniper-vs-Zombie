@@ -1,0 +1,5 @@
+other sfx: https://pixabay.com/sound-effects/search/bgm/
+
+bgm main menu: https://opentracks.com/en/bgm/detail/23950
+bgm stage: https://pixabay.com/ja/music/%E3%83%9B%E3%83%A9%E3%83%BC%E3%82%B7%E3%83%BC%E3%83%B3-black-box-fear-1short-form-bgm-486324/
+bgm lose: https://pixabay.com/ja/music/%E3%83%9B%E3%83%A9%E3%83%BC%E3%82%B7%E3%83%BC%E3%83%B3-horror-597176/
