@@ -17,6 +17,7 @@
 #include "Component/State/ComponentStateWalk.h"
 #include "SniperVsZombie_Gate.h"
 #include "Hit.h"
+#include "StoryText.h"
 #include <System/Component/ComponentCamera.h>
 #include <Game/Component/ComponentBlackScreen.h>
 #include <Game/Component/ComponentButton.h>
@@ -142,9 +143,10 @@ void SniperVsZombie_GameOver::PostDraw()
         SetFontSize(64);
     }
     else {
-        DrawTextWithAlign("Rescue failed", GetColor(255, 0, 0), 0, WINDOW_H / 2 - 32, 1);
+        DrawTextWithAlign(Story::RESULT_LOSE_EN, GetColor(255, 0, 0), 0, WINDOW_H / 2 - 32, 1);
         SetFontSize(50);
-        DrawTextWithAlign("救出作戦完了", GetColor(255, 0, 0), 0, WINDOW_H / 2 + 32, 1);
+        //was "救出作戦完了" (complete) for a loss too, a copy-paste bug(負けでも「完了」になっていた。コピペのバグ)
+        DrawTextWithAlign(result_ == GameResult::SniperDown ? Story::RESULT_SNIPER_JP : Story::RESULT_GATE_JP, GetColor(255, 0, 0), 0, WINDOW_H / 2 + 32, 1);
         SetFontSize(64);
     }
 

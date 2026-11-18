@@ -5,6 +5,7 @@
 #pragma once
 #include <System/Scene.h>
 #include "Float2.h"
+#include "GameResult.h"
 #include <Game/Component/ComponentBlackScreen.h>
 #include <Game/Component/ComponentButton.h>
 
@@ -19,10 +20,11 @@ class SniperVsZombie_GameOver : public Scene::Base
 public:
     BP_CLASS_DECL(SniperVsZombie_GameOver, u8"Game Over");
 
-    //! @brief called by MainStage right before Scene::Change, so this scene knows how it ended
-    void SetResult(bool isWin, int finalScore)
+    //! @brief called by MainStage right before Scene::Change, so this scene knows how it ended(MainStageがScene::Change直前に呼ぶ。どう終わったかを知るため)
+    void SetResult(GameResult result, int finalScore)
     {
-        isWin_      = isWin;
+        result_     = result;
+        isWin_      = result == GameResult::Win;
         finalScore_ = finalScore;
     }
 
@@ -42,8 +44,9 @@ private:
 
     std::weak_ptr<Helicopter> helicopter_;
 
-    bool isWin_      = true;    //!< true = all civilians saved, false = gate destroyed
-    int  finalScore_ = 0;       //!< score carried over from MainStage
+    GameResult result_     = GameResult::Win;    //which ending to play(どのエンディングを再生するか)
+    bool       isWin_      = true;               //!< true = all civilians saved, false = gate destroyed / sniper down
+    int        finalScore_ = 0;                  //!< score carried over from MainStage
 };
 
 }    // namespace SniperVsZombie

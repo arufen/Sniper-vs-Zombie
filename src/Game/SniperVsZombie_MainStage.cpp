@@ -205,23 +205,24 @@ float SniperVsZombie_MainStage::GetStageProgress() const
     return std::clamp(static_cast<float>(civilianSaved_) / static_cast<float>(Config::CIVILIAN_TOTAL), 0.0f, 1.0f);
 }
 
-void SniperVsZombie_MainStage::OnGameOver(bool isWin, bool breakGate)
+void SniperVsZombie_MainStage::OnGameOver(GameResult result)
 {
     isGameOver_ = true;
-    isWin_      = isWin;
+    isWin_      = result == GameResult::Win;
+    result_     = result;
 
     //play the broken gate only when zombies broke it, not when the player died(ゲートが壊された時だけ壊れ演出。プレイヤー死亡では出さない)
-    if(breakGate) {
+    if(result == GameResult::GateBreached) {
         if(auto gate = Scene::Object::Get<Gate>(Names::GATE)) {
             gate->DestroyGate();
         }
     }
 
-    // capture isWin + the score AS IT IS RIGHT NOW into the lambda, so the callback
+    // capture the result + the score AS IT IS RIGHT NOW into the lambda, so the callback
     // still has the correct values later even if score_ changes in the meantime
-    blackScreen_->StartFadeOut([isWin, finalScore = score_]() {
+    blackScreen_->StartFadeOut([result, finalScore = score_]() {
         auto gameOverScene = Scene::GetScene<SniperVsZombie_GameOver>();
-        gameOverScene->SetResult(isWin, finalScore);
+        gameOverScene->SetResult(result, finalScore);
         Scene::Change(gameOverScene);
     });
 }
@@ -257,11 +258,11 @@ void SniperVsZombie_MainStage::Update()
             isPlayerDead = stats->IsDead();
 
         if(gateHP_ <= 0)
-            OnGameOver(false, true);    //lose, gate broke(負け。ゲートが壊れた)
+            OnGameOver(GameResult::GateBreached);    //lose, gate broke(負け。ゲートが壊れた)
         else if(isPlayerDead)
-            OnGameOver(false, false);    //lose, player died(負け。プレイヤーが死んだ)
+            OnGameOver(GameResult::SniperDown);    //lose, player died(負け。プレイヤーが死んだ)
         else if(civilianSaved_ >= Config::CIVILIAN_TOTAL)
-            OnGameOver(true, false);    //win(勝ち)
+            OnGameOver(GameResult::Win);    //win(勝ち)
     }
 
     //Hit marker UI
@@ -399,9 +400,11 @@ void SniperVsZombie_MainStage::PostDraw()
             SetFontSize(64);
         }
         else {
-            DrawTextWithAlign("Rescue failed", GetColor(255, 0, 0), 0, WINDOW_H / 2 - 32, 1);
+            DrawTextWithAlign(Story::RESULT_LOSE_EN, GetColor(255, 0, 0), 0, WINDOW_H / 2 - 32, 1);
             SetFontSize(50);
-            DrawTextWithAlign("救出作戦完了", GetColor(255, 0, 0), 0, WINDOW_H / 2 + 32, 1);
+            //was "救出作戦完了" (complete) for a loss too, a copy-paste bug(負けでも「完了」になっていた。コピペのバグ)
+            DrawTextWithAlign(
+                result_ == GameResult::SniperDown ? Story::RESULT_SNIPER_JP : Story::RESULT_GATE_JP, GetColor(255, 0, 0), 0, WINDOW_H / 2 + 32, 1);
             SetFontSize(64);
         }
     }

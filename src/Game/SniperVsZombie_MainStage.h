@@ -10,6 +10,7 @@
 #include <Game/Component/ComponentCameraPath.h>
 #include <Game/Component/ComponentRadio.h>
 #include "ZombieSpawner.h"
+#include "GameResult.h"
 
 namespace SniperVsZombie {
 
@@ -65,7 +66,7 @@ private:
     //0.0 = stage start, 1.0 = all civilians saved(0.0=開始、1.0=全員救出)
     float GetStageProgress() const;
 
-    void OnGameOver(bool isWin, bool breakGate);
+    void OnGameOver(GameResult result);
 
     ZombieSpawner spawner_;    //all zombie spawning lives here now(ゾンビの出現処理は全部ここ)
 
@@ -75,18 +76,19 @@ private:
     std::weak_ptr<Object>  playerCamera_;    //the FPS camera object (look + shoot + gun)(FPSカメラObject。視点・射撃・銃)
     bool wasLeftMouseDown_ = true;           //for IsClickStarted. true = a held click from the last scene does not count(押しっぱなしのクリックは数えない)
 
-    int   score_               = 0;
-    float gateHP_              = 9999.0f;
-    float gateMaxHP_           = 9999.0f;
-    bool  isGameOver_          = false;
-    bool  isWin_               = false;    //!< true = all civilians saved, false = gate destroyed / player dead
-    int   civilianSaved_       = 0;
-    float civilianSaveTime_    = 0.0f;
-    int   hitMarkerHandle_     = -1;
-    int   hitMarkerRedHandle_  = -1;
-    int   hitmarkerAlpha_      = 0;
-    bool  hitmarkerIsHeadshot_ = false;
-    int   hitEffectHandle_     = -1;
+    int        score_               = 0;
+    float      gateHP_              = 9999.0f;
+    float      gateMaxHP_           = 9999.0f;
+    bool       isGameOver_          = false;
+    bool       isWin_               = false;              //!< true = all civilians saved, false = gate destroyed / player dead
+    GameResult result_              = GameResult::Win;    //how the stage ended, valid when isGameOver_(ステージの終わり方。isGameOver_の時に有効)
+    int        civilianSaved_       = 0;
+    float      civilianSaveTime_    = 0.0f;
+    int        hitMarkerHandle_     = -1;
+    int        hitMarkerRedHandle_  = -1;
+    int        hitmarkerAlpha_      = 0;
+    bool       hitmarkerIsHeadshot_ = false;
+    int        hitEffectHandle_     = -1;
 
     //GATE ARROW INDICATOR
     float3 gatePos_     = {0.0f, 0.0f, 0.0f};    //!< stores gate world pos so we don't Get<Gate>() every frame just to draw the marker
