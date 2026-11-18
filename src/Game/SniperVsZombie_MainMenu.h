@@ -7,6 +7,7 @@
 #include "Float2.h"
 #include <Game/Component/ComponentBlackScreen.h>
 #include <Game/Component/ComponentButton.h>
+#include <Game/Component/ComponentSlider.h>
 
 namespace SniperVsZombie {
 
@@ -29,8 +30,19 @@ private:
     int titleHandle;
     int bgm_ = -1;    //[DxLib] menu music, -1 if the file is missing(メニューの音楽。ファイルが無ければ-1)
 
+    //open/close the settings panel: the menu buttons and the panel widgets are never active at the same time(設定パネルを開閉。メニューのボタンとパネルの部品は同時に有効にならない)
+    void SetSettingsOpen(bool open);
+
+    void DrawSettingsPanel();
+
     ComponentButtonPtr playButton_;
+    ComponentButtonPtr settingsButton_;
     ComponentButtonPtr exitButton_;
+
+    //SETTINGS PANEL(設定パネル)
+    bool               settingsOpen_ = false;
+    ComponentSliderPtr sensitivitySlider_;
+    ComponentButtonPtr backButton_;
 
     ComponentBlackScreenPtr blackScreen_;    // fade-to-black used when leaving this scene
 };

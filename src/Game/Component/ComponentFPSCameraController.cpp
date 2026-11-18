@@ -111,8 +111,8 @@ void ComponentFPSCameraController::Update()
         SetFov(normal_fov + (zoomed_fov - normal_fov) * eased);
 
         // blend mouse sensitivity
-        float normal_sens = DEFAULT_MOUSE_SENSITIVITY_;
-        float zoomed_sens = DEFAULT_MOUSE_SENSITIVITY_ * 0.25f;
+        float normal_sens = DEFAULT_MOUSE_SENSITIVITY_ * sensitivity_scale_;    //player's setting(プレイヤーの設定)
+        float zoomed_sens = normal_sens * 0.25f;
         SetMouseSensitivity(normal_sens + (zoomed_sens - normal_sens) * eased);
     }
 }
@@ -175,6 +175,12 @@ ComponentFPSCameraControllerPtr ComponentFPSCameraController::SetEyePosition(flo
 ComponentFPSCameraControllerPtr ComponentFPSCameraController::SetMouseSensitivity(float sensitivity)
 {
     mouse_sensitivity_ = sensitivity;
+    return std::dynamic_pointer_cast<ComponentFPSCameraController>(shared_from_this());
+}
+
+ComponentFPSCameraControllerPtr ComponentFPSCameraController::SetSensitivityScale(float scale)
+{
+    sensitivity_scale_ = std::max(0.01f, scale);    //never 0, the camera would freeze(0にはしない。カメラが動かなくなる)
     return std::dynamic_pointer_cast<ComponentFPSCameraController>(shared_from_this());
 }
 

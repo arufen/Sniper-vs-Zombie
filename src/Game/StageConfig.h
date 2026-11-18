@@ -118,11 +118,11 @@ inline constexpr float INTRO_LINE_FADE     = 0.6f;    //fade-in time of one line
 //OPENING (MainStage)(オープニング)
 inline const std::vector<CameraShot> OPENING_SHOTS = {
     //O1: look at the ground, tilt up to the helicopter(O1: 地面を見て、ヘリへ見上げる)
-    {{420.526f, 303.759f, 445.839f}, {345.379f, 267.124f, 500.709f}, {420.526f, 303.759f, 445.839f}, {338.548f, 310.346f, 502.726f}, 3.0f},
+    {{420.526f, 303.759f, 445.839f}, {345.379f, 267.124f, 500.709f}, {420.526f, 303.759f, 445.839f}, {338.548f, 310.346f, 502.726f}, 4.0f},
     //O2: push forward to the gate(O2: ゲートへ前進)
-    {{205.136f, 135.576f, 651.688f},  {141.357f, 76.477f, 701.079f},  {114.261f, 68.438f, 669.705f},   {73.484f, 21.526f, 748.041f}, 2.0f},
+    {{205.136f, 135.576f, 651.688f},  {141.357f, 76.477f, 701.079f},  {114.261f, 68.438f, 669.705f},   {73.484f, 21.526f, 748.041f}, 4.0f},
     //O3: fly into the player's eyes (B = P0)(O3: プレイヤーの目へ飛ぶ。B=P0)
-    {{464.041f, 285.927f, 456.949f}, {419.590f, 233.830f, 529.818f}, {447.147f, 233.306f, 585.323f}, {357.566f, 197.144f, 611.160f}, 2.0f},
+    {{464.041f, 285.927f, 456.949f}, {419.590f, 233.830f, 529.818f}, {447.147f, 233.306f, 585.323f}, {357.566f, 197.144f, 611.160f}, 4.0f},
 };
 inline constexpr float PLAYER_START_YAW   = -73.91f;    //P0 look, from CameraProbe "look"(P0の視線。CameraProbeの"look")
 inline constexpr float PLAYER_START_PITCH = 21.20f;
@@ -152,7 +152,7 @@ inline constexpr float HELI_FLY_OUT_TIME = 3.0f;    //W2 -> W3
 inline constexpr float HELI_MODEL_YAW_OFFSET = 90.0f;
 inline constexpr float HELI_HOVER_BOB        = 3.0f;                              //up/down wobble while hovering(ホバリング中の上下の揺れ)
 inline const float3    WIN_CAMERA_EYE_START  = {522.771f, 425.551f, 766.159f};    //C1
-inline const float3    WIN_CAMERA_EYE_END    = {465.627f, 226.021f, -32.911f};    //C2
+inline const float3    WIN_CAMERA_EYE_END    = {977.128f, 520.000f, 726.781f};    //C2
 
 //LOSE: sniper down (GameOver)(負け: 狙撃手ダウン)
 inline const CameraShot SNIPER_DOWN_SHOT = {

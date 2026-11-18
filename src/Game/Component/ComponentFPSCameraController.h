@@ -27,6 +27,9 @@ public:
 
     ComponentFPSCameraControllerPtr SetMouseSensitivity(float sensitivity);
 
+    //player's sensitivity setting as a multiplier, 1.0 = normal. the scope zoom still slows it down on top(プレイヤーの感度設定・倍率。1.0=通常。スコープのズーム減速はその上にかかる)
+    ComponentFPSCameraControllerPtr SetSensitivityScale(float scale);
+
     ComponentFPSCameraControllerPtr SetPitchLimit(float min_deg, float max_deg);
 
     ComponentFPSCameraControllerPtr SetFov(float fov_deg);
@@ -53,6 +56,7 @@ private:
     float rotate_h_ = 0.0f;    //!< 左右回転(ラジアン)
 
     float mouse_sensitivity_ = DEFAULT_MOUSE_SENSITIVITY_;    //!< マウス感度
+    float sensitivity_scale_ = 1.0f;                          //settings menu multiplier(設定メニューの倍率)
 
     float limit_pitch_min_ = -60.0f * DegToRad;    //!< 下限
     float limit_pitch_max_ = +89.0f * DegToRad;    //!< 上限
