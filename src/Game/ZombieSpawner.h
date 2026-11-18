@@ -36,6 +36,13 @@ public:
     //what to do when any spawned zombie dies (score, hit marker, effect)(出したゾンビが死んだ時の処理。スコア・ヒットマーカー・エフェクト)
     void SetOnZombieKilled(OnKilledFunc on_killed) { on_zombie_killed_ = on_killed; }
 
+    //called right after a zombie is spawned, e.g. for the first-stalker radio line(ゾンビを出した直後に呼ばれる。最初のストーカーの無線など)
+    using OnSpawnedFunc = std::function<void(ZombieType type)>;
+    void SetOnZombieSpawned(OnSpawnedFunc on_spawned) { on_zombie_spawned_ = on_spawned; }
+
+    //freeze / unfreeze every zombie in the scene (Object::StatusBit::IsPause), e.g. at the end(シーンの全ゾンビを停止/再開する。終了時など)
+    void SetAllPaused(bool paused);
+
     //zombies still in the scene, dead bodies included until they are removed(シーンに残っているゾンビ数。消えるまでは死体も含む)
     int GetAliveCount() const;
     int GetAliveCount(ZombieType type) const;
@@ -59,7 +66,8 @@ private:
     float normal_spawn_timer_    = 0.0f;    //time until the next normal zombie(次の通常ゾンビまでの時間)
     float stalker_spawn_timer_   = 0.0f;    //time until the next stalker in phase 2(フェーズ2で次のストーカーまでの時間)
 
-    OnKilledFunc on_zombie_killed_;
+    OnKilledFunc  on_zombie_killed_;
+    OnSpawnedFunc on_zombie_spawned_;
 };
 
 }    // namespace SniperVsZombie

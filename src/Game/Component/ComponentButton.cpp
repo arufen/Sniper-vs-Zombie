@@ -46,7 +46,10 @@ void ComponentButton::DrawButton()
 
     DrawBoxAA(scaledPos.x, scaledPos.y, scaledPos.x + scaledSize.x, scaledPos.y + scaledSize.y, color_, 1);
 
-    DrawFormatString(static_cast<int>(center.x - 20.0f), static_cast<int>(center.y - 8.0f), GetColor(255, 255, 255), "%s", label_.c_str());
+    //center the label by its real width, so long labels like SETTINGS are centered too(実際の幅で中央寄せ。SETTINGSのような長いラベルも中央になる)
+    const int text_width = GetDrawStringWidth(label_.c_str(), static_cast<int>(label_.size()));
+    DrawFormatString(
+        static_cast<int>(center.x) - text_width / 2, static_cast<int>(center.y) - GetFontSize() / 2, GetColor(255, 255, 255), "%s", label_.c_str());
 }
 
 void ComponentButton::GUI()

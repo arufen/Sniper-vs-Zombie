@@ -96,7 +96,20 @@ ObjectPtr ZombieSpawner::SpawnZombie(ZombieType type, int lane)
         death->SetOnKilled(on_zombie_killed_);
 
     zombies_.push_back({type, zombie});
+
+    if(on_zombie_spawned_)
+        on_zombie_spawned_(type);
+
     return zombie;
+}
+
+void ZombieSpawner::SetAllPaused(bool paused)
+{
+    //IsPause blocks the Update of the zombie and all its components (walk, attack, jump). drawing keeps going(IsPauseはゾンビと全コンポーネントのUpdateを止める。描画は続く)
+    for(const auto& z : zombies_) {
+        if(auto obj = z.object.lock())
+            obj->SetStatus(Object::StatusBit::IsPause, paused);
+    }
 }
 
 int ZombieSpawner::GetAliveCount() const

@@ -7,6 +7,7 @@
 #include "ObjectNames.h"
 #include "SniperVsZombie_MainStage.h"
 #include "SniperVsZombie_Bullet.h"
+#include "GameSettings.h"
 #include "Game/Component/ComponentFPSCameraController.h"
 
 namespace SniperVsZombie {
@@ -19,6 +20,7 @@ bool Camera::Init()
     SetName(Names::CAMERA);
 
     auto cameraController = AddComponent<ComponentFPSCameraController>();
+    cameraController->SetSensitivityScale(Settings::GetMouseSensitivity());    //from the settings menu(設定メニューから)
     SetTranslate({0.0f, 10.0f, 0.0f});
     //cameraController->SetEyePosition()
 

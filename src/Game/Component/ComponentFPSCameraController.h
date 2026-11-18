@@ -27,11 +27,20 @@ public:
 
     ComponentFPSCameraControllerPtr SetMouseSensitivity(float sensitivity);
 
+    //player's sensitivity setting as a multiplier, 1.0 = normal. the scope zoom still slows it down on top(プレイヤーの感度設定・倍率。1.0=通常。スコープのズーム減速はその上にかかる)
+    ComponentFPSCameraControllerPtr SetSensitivityScale(float scale);
+
     ComponentFPSCameraControllerPtr SetPitchLimit(float min_deg, float max_deg);
 
     ComponentFPSCameraControllerPtr SetFov(float fov_deg);
 
     float3 GetForwardVector(float offset = 1.0f) const;
+
+    //look direction in degrees. x = yaw (left/right), y = pitch (+ = looking down)(視線の向き・度。x=左右、y=上下(+で下を向く))
+    float2 GetLookAngles() const { return float2(rotate_h_ * RadToDeg, rotate_v_ * RadToDeg); }
+
+    //set the look direction in degrees, e.g. where the player faces when control starts(視線の向きを度で設定。操作開始時に向く方向など)
+    ComponentFPSCameraControllerPtr SetLookAngles(float yaw_deg, float pitch_deg);
 
     void GUI() override;
 
@@ -47,6 +56,7 @@ private:
     float rotate_h_ = 0.0f;    //!< 左右回転(ラジアン)
 
     float mouse_sensitivity_ = DEFAULT_MOUSE_SENSITIVITY_;    //!< マウス感度
+    float sensitivity_scale_ = 1.0f;                          //settings menu multiplier(設定メニューの倍率)
 
     float limit_pitch_min_ = -60.0f * DegToRad;    //!< 下限
     float limit_pitch_max_ = +89.0f * DegToRad;    //!< 上限

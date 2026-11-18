@@ -5,6 +5,7 @@
 #include "SniperVsZombie_MainStage.h"
 #include "ObjectNames.h"
 #include "ShaderCamera.h"
+#include "CameraProbe.h"
 #include "StageConfig.h"
 #include "SniperVsZombie_City.h"
 #include "SniperVsZombie_Sky.h"
@@ -15,6 +16,9 @@
 #include "SniperVsZombie_Gate.h"
 #include "SniperVsZombie_GameOver.h"
 #include "HudText.h"
+#include "StoryText.h"
+#include "SoundUtil.h"
+#include "AssetPaths.h"
 #include <Game/Component/ComponentFPSCameraController.h>
 #include <Game/Component/ComponentBlackScreen.h>
 #include <algorithm>
@@ -35,10 +39,13 @@ bool SniperVsZombie_MainStage::Init()
     gateMaxHP_ = gate->GetMaxHP();
     gateHP_    = gate->GetHP();
     gatePos_   = Config::GATE_POSITION;    // save it so PostDraw can use it for the arrow marker
+    gate->SetOnDamaged([this](float hp, float max_hp) { OnGateDamaged(hp, max_hp); });
 
-    //CAMERA
+    //CAMERA - the player's FPS view. frozen until the opening ends(プレイヤーのFPS視点。オープニングが終わるまで止めておく)
     auto camera = Scene::Object::Create<Camera>()->SetTranslate(Config::PLAYER_SPAWN_POSITION);
     camera->SetRotationAxisXYZ(Config::PLAYER_SPAWN_ROTATION);
+    playerCamera_ = camera;
+    SetPlayerControl(false);
 
     //PLAYER - hit body + HP. view and shooting stay in the Camera above(プレイヤー。当たり判定とHP。視点と射撃は上のCamera)
     auto player  = Scene::Object::Create<Player>()->SetTranslate(Config::PLAYER_SPAWN_POSITION + Config::PLAYER_EYE_TO_BODY);
@@ -47,14 +54,12 @@ bool SniperVsZombie_MainStage::Init()
     //MAP
     CreateMap();
 
-    //ZOMBIES - every death goes to OnZombieKilled(ゾンビ。全ての死亡はOnZombieKilledへ)
+    //ZOMBIES - every death goes to OnZombieKilled. the first zombie comes when the opening ends(ゾンビ。全ての死亡はOnZombieKilledへ。最初の1体はオープニング後)
     spawner_.SetOnZombieKilled([this](const ComponentEnemyDeath::KillInfo& kill) { OnZombieKilled(kill); });
+    spawner_.SetOnZombieSpawned([this](ZombieType type) { OnZombieSpawned(type); });
 
-    //first one goes out right away, the rest come from the spawner timer in Update()(最初の1体はすぐ出す。残りはUpdateのスポナータイマーから)
-    spawner_.SpawnZombie(ZombieType::Normal);
-
-    //TEST: stalker right away. remove this line when the stalker is tuned(テスト: すぐストーカーを出す。調整が終わったらこの行を消す)
-    spawner_.SpawnZombie(ZombieType::Stalker);
+    //RADIO(無線)
+    radio_ = CreateRadio();
 
     //UI
     {
@@ -66,13 +71,75 @@ bool SniperVsZombie_MainStage::Init()
     //EFFECT
     hitEffectHandle_ = LoadEffekseerEffect("data/Sample/Effects/hit_eff.efkefc");
 
-    //BLACK SCREEN TRANSITION
+    //SOUNDS - silent until the files exist (RequiredAssets.md)(ファイルができるまで無音)
+    bgm_            = Sound::Load(Assets::BGM_STAGE);
+    sfxGateHit_     = Sound::Load(Assets::SFX_GATE_HIT);
+    sfxGateBreak_   = Sound::Load(Assets::SFX_GATE_BREAK);
+    sfxZombieGroan_ = Sound::Load(Assets::SFX_ZOMBIE_GROAN);
+    sfxStalker_     = Sound::Load(Assets::SFX_STALKER_SCREECH);
+    sfxPlayerHurt_  = Sound::Load(Assets::SFX_PLAYER_HURT);
+    Sound::PlayLoop(bgm_, Config::BGM_VOLUME);
+
+    //BLACK SCREEN TRANSITION - only for leaving. the opening does its own short fade in(退出用のみ。オープニングが自分で短くフェードインする)
     auto blackScreenObj = Scene::Object::Create<Object>();
     blackScreenObj->SetName(Names::BLACK_SCREEN);
     blackScreen_ = blackScreenObj->AddComponent<ComponentBlackScreen>();
-    blackScreen_->StartFadeIn();    // start fully black, fade INTO the stage
+
+    StartOpening();
 
     return true;
+}
+
+void SniperVsZombie_MainStage::StartOpening()
+{
+    stageState_ = StageState::Opening;
+
+    auto cutscene_obj = Scene::Object::Create<Object>();
+    cutscene_obj->SetName(Names::CUTSCENE_CAMERA);
+    opening_ = cutscene_obj->AddComponent<ComponentCameraPath>();
+    opening_->SetShots(Config::OPENING_SHOTS)
+        ->SetFadeInAtStart(true)    //the 2s black screen fade would eat most of O1, so a short own fade(2秒の暗転だとO1がほぼ隠れるので、短い自前フェード)
+        ->SetOnFinished([this]() { OnOpeningFinished(); });
+    opening_->Play();
+}
+
+void SniperVsZombie_MainStage::OnOpeningFinished()
+{
+    //give the view back to the FPS camera. O3 ends exactly at P0, so it does not jump(FPSカメラに視点を返す。O3はP0で終わるので飛ばない)
+    opening_->ReleaseCamera();
+
+    if(auto camera = playerCamera_.lock()) {
+        if(auto controller = camera->GetComponent<ComponentFPSCameraController>())
+            controller->SetLookAngles(Config::PLAYER_START_YAW, Config::PLAYER_START_PITCH);
+    }
+    SetPlayerControl(true);
+
+    stageState_ = StageState::Playing;
+
+    //first zombie right away, the rest come from the spawner timer(最初の1体はすぐ。残りはスポナーのタイマーから)
+    spawner_.SpawnZombie(ZombieType::Normal);
+
+    radio_->Say(Story::RADIO_MISSION_START);
+    radio_->Say(Story::RADIO_OBJECTIVE);
+}
+
+void SniperVsZombie_MainStage::SetPlayerControl(bool enable)
+{
+    auto camera = playerCamera_.lock();
+    if(!camera)
+        return;
+
+    //NoUpdate stops look + shooting, NoDraw hides the gun and the scope(NoUpdateで視点と射撃を止め、NoDrawで銃とスコープを隠す)
+    camera->SetStatus(Object::StatusBit::NoUpdate, !enable);
+    camera->SetStatus(Object::StatusBit::NoDraw, !enable);
+}
+
+bool SniperVsZombie_MainStage::IsClickStarted()
+{
+    const bool left_down   = (GetMouseInput() & MOUSE_INPUT_LEFT) != 0;
+    const bool click_start = left_down && !wasLeftMouseDown_;
+    wasLeftMouseDown_      = left_down;
+    return click_start;
 }
 
 void SniperVsZombie_MainStage::ResetStageState()
@@ -87,6 +154,13 @@ void SniperVsZombie_MainStage::ResetStageState()
     hitmarkerAlpha_      = 0;
     hitmarkerIsHeadshot_ = false;
     arrowTimer_          = 0.0f;
+    stageState_          = StageState::Opening;
+    wasLeftMouseDown_    = true;
+    said_                = SaidFlags{};
+    prevPlayerHP_        = -1.0f;
+    endingTimer_         = 0.0f;
+    endingFadeStarted_   = false;
+    groanCooldown_       = 0.0f;
 }
 
 void SniperVsZombie_MainStage::CreateMap()
@@ -99,6 +173,7 @@ void SniperVsZombie_MainStage::CreateMap()
 
     Scene::Object::Create<Sky>();
     Scene::Object::Create<ShaderCamera>();    //sends the real camera position to ps_model.fx(本当のカメラ位置をps_model.fxへ送る)
+    CreateCameraProbe();                      //dev tool: F7 show, F8 copy camera position. Debug only(開発ツール: F7表示、F8でカメラ位置をコピー。Debugのみ)
 
     auto helicopter = Scene::Object::Create<Helicopter>();
     helicopter->SetTranslate(Config::HELI_POSITION);
@@ -140,6 +215,83 @@ void SniperVsZombie_MainStage::UpdateCivilian()
         //1 civilian saved every CIVILIAN_SAVE_INTERVAL seconds(CIVILIAN_SAVE_INTERVAL秒ごとに1人救出)
         if(civilianSaved_ < Config::CIVILIAN_TOTAL)
             civilianSaved_++;
+
+        //milestones: the counter is the story, so say it out loud(節目: カウンターが物語なので無線で伝える)
+        if(!said_.civilian_half && civilianSaved_ >= Config::CIVILIAN_TOTAL / 2) {
+            said_.civilian_half = true;
+            radio_->Say(Story::RADIO_CIVILIAN_HALF);
+        }
+        if(!said_.civilian_almost && civilianSaved_ >= Config::CIVILIAN_TOTAL - Config::CIVILIAN_ALMOST_LEFT) {
+            said_.civilian_almost = true;
+            radio_->Say(Story::RADIO_CIVILIAN_ALMOST);
+        }
+    }
+}
+
+void SniperVsZombie_MainStage::OnGateDamaged(float hp, float max_hp)
+{
+    if(isGameOver_ || max_hp <= 0.0f)
+        return;
+
+    const float ratio = hp / max_hp;
+
+    Sound::Play(sfxGateHit_, Config::SFX_GATE_VOLUME);
+
+    //only the most important new warning, so 2 lines never come at once(一番重要な新しい警告だけ。2つ同時に出さない)
+    if(!said_.gate_low && ratio <= Config::GATE_WARN_LOW) {
+        said_.gate_low = said_.gate_half = said_.gate_hit = true;
+        radio_->Say(Story::RADIO_GATE_LOW);
+    }
+    else if(!said_.gate_half && ratio <= Config::GATE_WARN_HALF) {
+        said_.gate_half = said_.gate_hit = true;
+        radio_->Say(Story::RADIO_GATE_HALF);
+    }
+    else if(!said_.gate_hit) {
+        said_.gate_hit = true;
+        radio_->Say(Story::RADIO_GATE_FIRST_HIT);
+    }
+}
+
+void SniperVsZombie_MainStage::OnZombieSpawned(ZombieType type)
+{
+    //SOUND: every stalker screeches, normal zombies groan with a cooldown(音: ストーカーは毎回叫ぶ。通常ゾンビはクールダウン付きでうめく)
+    if(type == ZombieType::Stalker) {
+        Sound::Play(sfxStalker_, Config::SFX_ZOMBIE_VOLUME);
+    }
+    else if(groanCooldown_ <= 0.0f) {
+        Sound::Play(sfxZombieGroan_, Config::SFX_ZOMBIE_VOLUME);
+        groanCooldown_ = Config::ZOMBIE_GROAN_COOLDOWN;
+    }
+
+    if(type == ZombieType::Stalker && !said_.stalker) {
+        said_.stalker = true;
+        radio_->Say(Story::RADIO_STALKER);
+    }
+}
+
+void SniperVsZombie_MainStage::UpdatePlayerRadio()
+{
+    auto stats = playerStats_.lock();
+    if(!stats)
+        return;
+
+    const float hp   = stats->GetHP();
+    const bool  hurt = prevPlayerHP_ >= 0.0f && hp < prevPlayerHP_;    //HP went down this frame(このフレームでHPが減った)
+    prevPlayerHP_    = hp;
+
+    if(hurt)
+        Sound::Play(sfxPlayerHurt_, Config::SFX_HURT_VOLUME);
+
+    if(!hurt || stats->IsDead())
+        return;
+
+    if(!said_.player_low && stats->GetHPRatio() <= Config::PLAYER_WARN_LOW) {
+        said_.player_low = said_.player_hit = true;
+        radio_->Say(Story::RADIO_PLAYER_LOW);
+    }
+    else if(!said_.player_hit) {
+        said_.player_hit = true;
+        radio_->Say(Story::RADIO_PLAYER_HIT);
     }
 }
 
@@ -148,40 +300,90 @@ float SniperVsZombie_MainStage::GetStageProgress() const
     return std::clamp(static_cast<float>(civilianSaved_) / static_cast<float>(Config::CIVILIAN_TOTAL), 0.0f, 1.0f);
 }
 
-void SniperVsZombie_MainStage::OnGameOver(bool isWin, bool breakGate)
+void SniperVsZombie_MainStage::OnGameOver(GameResult result)
 {
-    isGameOver_ = true;
-    isWin_      = isWin;
+    isGameOver_        = true;
+    isWin_             = result == GameResult::Win;
+    result_            = result;
+    stageState_        = StageState::Ending;
+    endingTimer_       = Config::ENDING_HOLD_TIME;
+    endingFadeStarted_ = false;
 
-    //play the broken gate only when zombies broke it, not when the player died(ゲートが壊された時だけ壊れ演出。プレイヤー死亡では出さない)
-    if(breakGate) {
-        if(auto gate = Scene::Object::Get<Gate>(Names::GATE)) {
+    //FREEZE: zombies stop where they are, the player can not shoot anymore (the gun stays visible)(停止: ゾンビはその場で止まり、射撃不可。銃は見えたまま)
+    spawner_.SetAllPaused(true);
+    if(auto camera = playerCamera_.lock())
+        camera->SetStatus(Object::StatusBit::NoUpdate, true);
+
+    switch(result) {
+    case GameResult::Win:
+        radio_->Say(Story::RADIO_END_WIN, true);
+        break;
+
+    case GameResult::GateBreached:
+        //play the broken gate only when zombies broke it, not when the player died(ゲートが壊された時だけ壊れ演出。プレイヤー死亡では出さない)
+        if(auto gate = Scene::Object::Get<Gate>(Names::GATE))
             gate->DestroyGate();
-        }
-    }
+        Sound::Play(sfxGateBreak_, Config::SFX_GATE_VOLUME);
+        radio_->Say(Story::RADIO_END_GATE, true);
+        break;
 
-    // capture isWin + the score AS IT IS RIGHT NOW into the lambda, so the callback
+    case GameResult::SniperDown:
+        radio_->Say(Story::RADIO_END_SNIPER, true);    //the screen goes red in PostDraw(PostDrawで画面が赤くなる)
+        break;
+    }
+}
+
+void SniperVsZombie_MainStage::UpdateEnding()
+{
+    endingTimer_ -= GetDeltaTime();
+    if(endingTimer_ > 0.0f || endingFadeStarted_)
+        return;
+
+    endingFadeStarted_ = true;
+
+    // capture the result + the score AS IT IS RIGHT NOW into the lambda, so the callback
     // still has the correct values later even if score_ changes in the meantime
-    blackScreen_->StartFadeOut([isWin, finalScore = score_]() {
+    blackScreen_->StartFadeOut([result = result_, finalScore = score_]() {
         auto gameOverScene = Scene::GetScene<SniperVsZombie_GameOver>();
-        gameOverScene->SetResult(isWin, finalScore);
+        gameOverScene->SetResult(result, finalScore);
         Scene::Change(gameOverScene);
     });
 }
 
 void SniperVsZombie_MainStage::Update()
 {
+    const bool click_started = IsClickStarted();
+
+    //OPENING - nothing moves, a click skips the cutscene(オープニング。何も動かない。クリックでスキップ)
+    if(stageState_ == StageState::Opening) {
+        if(click_started && opening_)
+            opening_->Skip();
+        return;
+    }
+
     //ZOMBIES - no new zombies once the game is over(ゾンビ。ゲーム終了後は新しく出さない)
     if(!isGameOver_)
         spawner_.Update(GetDeltaTime(), GetStageProgress());
 
-    //Update civilians count
-    UpdateCivilian();
+    //Update civilians count. stops at the end, so the counter does not change after the result(市民数を更新。終了後は結果が変わらないよう止める)
+    if(!isGameOver_)
+        UpdateCivilian();
 
     //Get gate HP
     if(auto gate = Scene::Object::Get<Gate>(Names::GATE)) {
         gateHP_ = gate->GetHP();
     }
+
+    if(groanCooldown_ > 0.0f)
+        groanCooldown_ -= GetDeltaTime();
+
+    //ENDING - wait, then fade to GameOver(終了。待ってからGameOverへフェード)
+    if(stageState_ == StageState::Ending)
+        UpdateEnding();
+
+    //player hurt radio lines(プレイヤー被弾の無線)
+    if(!isGameOver_)
+        UpdatePlayerRadio();
 
     //Check Gameover
     if(!isGameOver_) {
@@ -190,11 +392,11 @@ void SniperVsZombie_MainStage::Update()
             isPlayerDead = stats->IsDead();
 
         if(gateHP_ <= 0)
-            OnGameOver(false, true);    //lose, gate broke(負け。ゲートが壊れた)
+            OnGameOver(GameResult::GateBreached);    //lose, gate broke(負け。ゲートが壊れた)
         else if(isPlayerDead)
-            OnGameOver(false, false);    //lose, player died(負け。プレイヤーが死んだ)
+            OnGameOver(GameResult::SniperDown);    //lose, player died(負け。プレイヤーが死んだ)
         else if(civilianSaved_ >= Config::CIVILIAN_TOTAL)
-            OnGameOver(true, false);    //win(勝ち)
+            OnGameOver(GameResult::Win);    //win(勝ち)
     }
 
     //Hit marker UI
@@ -208,6 +410,13 @@ void SniperVsZombie_MainStage::Update()
 void SniperVsZombie_MainStage::Exit()
 {
     DeleteEffekseerEffect(hitEffectHandle_);
+
+    Sound::Release(bgm_);
+    Sound::Release(sfxGateHit_);
+    Sound::Release(sfxGateBreak_);
+    Sound::Release(sfxZombieGroan_);
+    Sound::Release(sfxStalker_);
+    Sound::Release(sfxPlayerHurt_);
     Hud::ReleaseFont();    //free the HUD font, it is made again next time it is needed(HUDフォントを解放。次に必要な時に作り直される)
 }
 
@@ -215,11 +424,21 @@ void SniperVsZombie_MainStage::PostDraw()
 {
     __super::PostDraw();
 
+    const int          line  = Hud::GetLineHeight();
+    const unsigned int white = GetColor(255, 255, 255);
+
+    //OPENING - no HUD, only the fade cuts + skip hint(オープニング。HUDなし、フェードカットとスキップ案内だけ)
+    if(stageState_ == StageState::Opening) {
+        if(opening_)
+            opening_->DrawFade();
+        Hud::DrawLabelRight(WINDOW_W - 20, WINDOW_H - 20 - line, GetColor(200, 200, 200), "%s", Story::OPENING_SKIP);
+        blackScreen_->DrawBlackScreen();
+        return;
+    }
+
     //----------------------------------------------------------
     // HUD - all text uses Hud:: = bigger font with a black outline(HUD - 文字は全部Hud::を使う=大きめで黒い縁取り付き)
     //----------------------------------------------------------
-    const int          line  = Hud::GetLineHeight();
-    const unsigned int white = GetColor(255, 255, 255);
 
     //SCORE(スコア)
     const int left_y = 50;
@@ -304,27 +523,23 @@ void SniperVsZombie_MainStage::PostDraw()
     if(auto stats = playerStats_.lock())
         stats->DrawHUD();
 
+    //SNIPER DOWN - the screen slowly turns red during the ending hold(狙撃手ダウン。終了待ちの間に画面がゆっくり赤くなる)
+    if(stageState_ == StageState::Ending && result_ == GameResult::SniperDown && Config::ENDING_HOLD_TIME > 0.0f) {
+        const float t = std::clamp(1.0f - endingTimer_ / Config::ENDING_HOLD_TIME, 0.0f, 1.0f);
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, static_cast<int>(Config::SNIPER_DOWN_RED_ALPHA * t));
+        DrawBox(0, 0, WINDOW_W, WINDOW_H, GetColor(120, 0, 0), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+    }
+
+    //RADIO subtitles, then the short fade after a skipped opening(無線字幕、その後スキップ後の短いフェード)
+    radio_->DrawRadio();
+    if(opening_)
+        opening_->DrawFade();
+
     //BLACK SCREEN TRANSITION - draw LAST so it covers everything above during fades
     blackScreen_->DrawBlackScreen();
 
-    //GAME OVER
-    if(isGameOver_) {
-        SetFontSize(64);
-        if(isWin_) {
-            DrawTextWithAlign("Rescue complete", GetColor(0, 255, 0), 0, WINDOW_H / 2 - 32, 1);
-            SetFontSize(50);
-            DrawTextWithAlign("救出作戦完了", GetColor(0, 255, 0), 0, WINDOW_H / 2 + 32, 1);
-            SetFontSize(64);
-        }
-        else {
-            DrawTextWithAlign("Rescue failed", GetColor(255, 0, 0), 0, WINDOW_H / 2 - 32, 1);
-            SetFontSize(50);
-            DrawTextWithAlign("救出作戦完了", GetColor(255, 0, 0), 0, WINDOW_H / 2 + 32, 1);
-            SetFontSize(64);
-        }
-    }
-
-    SetFontSize(20);
+    //the big result text moved to GameOver: it shows after the ending cutscene now(大きな結果の文字はGameOverへ移動: エンディングのカットシーン後に出る)
 }
 
 }    // namespace SniperVsZombie

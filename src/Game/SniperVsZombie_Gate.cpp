@@ -11,7 +11,10 @@ namespace SniperVsZombie {
 void Gate::TakeDamage(float damage)
 {
     if(HP_ > 0) {
-        HP_ -= damage;
+        HP_ -= static_cast<int>(damage);
+
+        if(on_damaged_)
+            on_damaged_(GetHP(), GetMaxHP());
     }
 }
 
