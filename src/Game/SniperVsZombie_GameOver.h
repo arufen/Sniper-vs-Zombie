@@ -67,6 +67,11 @@ private:
     bool       isWin_      = true;               //!< true = all civilians saved, false = gate destroyed / sniper down
     int        finalScore_ = 0;                  //!< score carried over from MainStage
 
+    //SOUNDS - -1 when the file is missing (RequiredAssets.md)(音。ファイルが無ければ-1)
+    int bgm_          = -1;
+    int sfxHeli_      = -1;
+    int sfxGateBreak_ = -1;
+
     float resultDelay_      = -1.0f;    //counts down after the cutscene, -1 = not started(カットシーン後のカウントダウン。-1=未開始)
     bool  showResult_       = false;    //true = result text + buttons are visible(true=結果とボタンが見える)
     int   winRadioStep_     = 0;        //which win radio line comes next(次に流す勝利の無線)

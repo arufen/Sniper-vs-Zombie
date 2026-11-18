@@ -12,6 +12,8 @@
 #include "SniperVsZombie_WoodTower.h"
 #include "SniperVsZombie_MainStage.h"
 #include "Hit.h"
+#include "SoundUtil.h"
+#include "AssetPaths.h"
 #include <System/Component/ComponentCamera.h>
 #include <Game/Component/ComponentBlackScreen.h>
 #include <Game/Component/ComponentButton.h>
@@ -43,6 +45,10 @@ bool SniperVsZombie_MainMenu::Init()
 
     //Image
     titleHandle = LoadGraph("data/Game/UI/title.png");
+
+    //BGM - silent until the file exists (RequiredAssets.md)(ファイルができるまで無音)
+    bgm_ = Sound::Load(Assets::BGM_MENU);
+    Sound::PlayLoop(bgm_, Config::BGM_VOLUME);
 
     //BLACK SCREEN TRANSITION
     auto blackScreenObj = Scene::Object::Create<Object>();
@@ -83,6 +89,11 @@ void SniperVsZombie_MainMenu::PostDraw()
 
     //BLACK SCREEN TRANSITION - draw LAST so it covers everything above during fades
     blackScreen_->DrawBlackScreen();
+}
+
+void SniperVsZombie_MainMenu::Exit()
+{
+    Sound::Release(bgm_);
 }
 
 }    // namespace SniperVsZombie

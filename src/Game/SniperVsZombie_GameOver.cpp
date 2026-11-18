@@ -77,6 +77,10 @@ bool SniperVsZombie_GameOver::Init()
     cutscene_ = camera->AddComponent<ComponentCameraPath>();
     cutscene_->SetFadeInAtStart(true)->SetOnFinished([this]() { OnCutsceneFinished(); });
 
+    //BGM - win or lose music(勝ち/負けの音楽)
+    bgm_ = Sound::Load(isWin_ ? Assets::BGM_WIN : Assets::BGM_LOSE);
+    Sound::PlayLoop(bgm_, Config::BGM_VOLUME);
+
     //the result (set by MainStage) picks the ending(MainStageが設定した結果でエンディングを選ぶ)
     switch(result_) {
     case GameResult::Win:
@@ -120,6 +124,9 @@ void SniperVsZombie_GameOver::SetupWin()
     });
     cutscene_->SetFollowTarget(helicopter_);
 
+    sfxHeli_ = Sound::Load(Assets::SFX_HELI_ROTOR_LOOP);
+    Sound::PlayLoop(sfxHeli_, Config::SFX_HELI_VOLUME);
+
     radio_->Say(Story::RADIO_HELI_INBOUND);
     winRadioStep_ = 1;
 }
@@ -143,6 +150,9 @@ void SniperVsZombie_GameOver::SetupGateBreached()
 
     if(auto gate = Scene::Object::Get<Gate>(Names::GATE_CUTSCENE))
         gate->DestroyGate();
+
+    sfxGateBreak_ = Sound::Load(Assets::SFX_GATE_BREAK);
+    Sound::Play(sfxGateBreak_, Config::SFX_GATE_VOLUME);
 
     radio_->Say(Story::RADIO_GATE_LOST);
 }
@@ -305,6 +315,9 @@ void SniperVsZombie_GameOver::PostDraw()
 
 void SniperVsZombie_GameOver::Exit()
 {
+    Sound::Release(bgm_);
+    Sound::Release(sfxHeli_);
+    Sound::Release(sfxGateBreak_);
     Hud::ReleaseFont();    //the radio used the HUD font(無線がHUDフォントを使った)
 }
 

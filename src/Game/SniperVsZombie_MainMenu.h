@@ -23,8 +23,11 @@ public:
 
     void PostDraw() override;
 
+    void Exit() override;
+
 private:
     int titleHandle;
+    int bgm_ = -1;    //[DxLib] menu music, -1 if the file is missing(メニューの音楽。ファイルが無ければ-1)
 
     ComponentButtonPtr playButton_;
     ComponentButtonPtr exitButton_;

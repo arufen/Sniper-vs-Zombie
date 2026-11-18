@@ -17,6 +17,8 @@
 #include "SniperVsZombie_GameOver.h"
 #include "HudText.h"
 #include "StoryText.h"
+#include "SoundUtil.h"
+#include "AssetPaths.h"
 #include <Game/Component/ComponentFPSCameraController.h>
 #include <Game/Component/ComponentBlackScreen.h>
 #include <algorithm>
@@ -68,6 +70,15 @@ bool SniperVsZombie_MainStage::Init()
 
     //EFFECT
     hitEffectHandle_ = LoadEffekseerEffect("data/Sample/Effects/hit_eff.efkefc");
+
+    //SOUNDS - silent until the files exist (RequiredAssets.md)(ファイルができるまで無音)
+    bgm_            = Sound::Load(Assets::BGM_STAGE);
+    sfxGateHit_     = Sound::Load(Assets::SFX_GATE_HIT);
+    sfxGateBreak_   = Sound::Load(Assets::SFX_GATE_BREAK);
+    sfxZombieGroan_ = Sound::Load(Assets::SFX_ZOMBIE_GROAN);
+    sfxStalker_     = Sound::Load(Assets::SFX_STALKER_SCREECH);
+    sfxPlayerHurt_  = Sound::Load(Assets::SFX_PLAYER_HURT);
+    Sound::PlayLoop(bgm_, Config::BGM_VOLUME);
 
     //BLACK SCREEN TRANSITION - only for leaving. the opening does its own short fade in(退出用のみ。オープニングが自分で短くフェードインする)
     auto blackScreenObj = Scene::Object::Create<Object>();
@@ -149,6 +160,7 @@ void SniperVsZombie_MainStage::ResetStageState()
     prevPlayerHP_        = -1.0f;
     endingTimer_         = 0.0f;
     endingFadeStarted_   = false;
+    groanCooldown_       = 0.0f;
 }
 
 void SniperVsZombie_MainStage::CreateMap()
@@ -223,6 +235,8 @@ void SniperVsZombie_MainStage::OnGateDamaged(float hp, float max_hp)
 
     const float ratio = hp / max_hp;
 
+    Sound::Play(sfxGateHit_, Config::SFX_GATE_VOLUME);
+
     //only the most important new warning, so 2 lines never come at once(一番重要な新しい警告だけ。2つ同時に出さない)
     if(!said_.gate_low && ratio <= Config::GATE_WARN_LOW) {
         said_.gate_low = said_.gate_half = said_.gate_hit = true;
@@ -240,6 +254,15 @@ void SniperVsZombie_MainStage::OnGateDamaged(float hp, float max_hp)
 
 void SniperVsZombie_MainStage::OnZombieSpawned(ZombieType type)
 {
+    //SOUND: every stalker screeches, normal zombies groan with a cooldown(音: ストーカーは毎回叫ぶ。通常ゾンビはクールダウン付きでうめく)
+    if(type == ZombieType::Stalker) {
+        Sound::Play(sfxStalker_, Config::SFX_ZOMBIE_VOLUME);
+    }
+    else if(groanCooldown_ <= 0.0f) {
+        Sound::Play(sfxZombieGroan_, Config::SFX_ZOMBIE_VOLUME);
+        groanCooldown_ = Config::ZOMBIE_GROAN_COOLDOWN;
+    }
+
     if(type == ZombieType::Stalker && !said_.stalker) {
         said_.stalker = true;
         radio_->Say(Story::RADIO_STALKER);
@@ -255,6 +278,9 @@ void SniperVsZombie_MainStage::UpdatePlayerRadio()
     const float hp   = stats->GetHP();
     const bool  hurt = prevPlayerHP_ >= 0.0f && hp < prevPlayerHP_;    //HP went down this frame(このフレームでHPが減った)
     prevPlayerHP_    = hp;
+
+    if(hurt)
+        Sound::Play(sfxPlayerHurt_, Config::SFX_HURT_VOLUME);
 
     if(!hurt || stats->IsDead())
         return;
@@ -297,6 +323,7 @@ void SniperVsZombie_MainStage::OnGameOver(GameResult result)
         //play the broken gate only when zombies broke it, not when the player died(ゲートが壊された時だけ壊れ演出。プレイヤー死亡では出さない)
         if(auto gate = Scene::Object::Get<Gate>(Names::GATE))
             gate->DestroyGate();
+        Sound::Play(sfxGateBreak_, Config::SFX_GATE_VOLUME);
         radio_->Say(Story::RADIO_END_GATE, true);
         break;
 
@@ -347,6 +374,9 @@ void SniperVsZombie_MainStage::Update()
         gateHP_ = gate->GetHP();
     }
 
+    if(groanCooldown_ > 0.0f)
+        groanCooldown_ -= GetDeltaTime();
+
     //ENDING - wait, then fade to GameOver(終了。待ってからGameOverへフェード)
     if(stageState_ == StageState::Ending)
         UpdateEnding();
@@ -380,6 +410,13 @@ void SniperVsZombie_MainStage::Update()
 void SniperVsZombie_MainStage::Exit()
 {
     DeleteEffekseerEffect(hitEffectHandle_);
+
+    Sound::Release(bgm_);
+    Sound::Release(sfxGateHit_);
+    Sound::Release(sfxGateBreak_);
+    Sound::Release(sfxZombieGroan_);
+    Sound::Release(sfxStalker_);
+    Sound::Release(sfxPlayerHurt_);
     Hud::ReleaseFont();    //free the HUD font, it is made again next time it is needed(HUDフォントを解放。次に必要な時に作り直される)
 }
 

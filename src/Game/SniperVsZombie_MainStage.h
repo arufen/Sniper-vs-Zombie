@@ -92,6 +92,15 @@ private:
     float     endingTimer_       = 0.0f;     //time left before the fade out(フェードアウトまでの残り時間)
     bool      endingFadeStarted_ = false;
 
+    //SOUNDS - -1 when the file is missing, then they are just silent (RequiredAssets.md)(音。ファイルが無ければ-1で無音)
+    int   bgm_            = -1;
+    int   sfxGateHit_     = -1;
+    int   sfxGateBreak_   = -1;
+    int   sfxZombieGroan_ = -1;
+    int   sfxStalker_     = -1;
+    int   sfxPlayerHurt_  = -1;
+    float groanCooldown_  = 0.0f;    //time until the next groan is allowed(次のうめき声までの時間)
+
     ZombieSpawner spawner_;    //all zombie spawning lives here now(ゾンビの出現処理は全部ここ)
 
     StageState             stageState_ = StageState::Opening;
