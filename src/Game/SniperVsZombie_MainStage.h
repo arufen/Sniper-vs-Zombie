@@ -66,7 +66,31 @@ private:
     //0.0 = stage start, 1.0 = all civilians saved(0.0=開始、1.0=全員救出)
     float GetStageProgress() const;
 
+    //won or lost: freeze the zombies, say the last radio line, then fade after ENDING_HOLD_TIME(勝敗決定: ゾンビを止め、最後の無線を流し、ENDING_HOLD_TIME後にフェード)
     void OnGameOver(GameResult result);
+    void UpdateEnding();
+
+    //STORY BEATS - radio lines when something happens for the first time(ストーリーの節目。初めて何かが起きた時の無線)
+    void OnGateDamaged(float hp, float max_hp);
+    void OnZombieSpawned(ZombieType type);
+    void UpdatePlayerRadio();
+
+    //each line is said only once per run(各無線は1回のプレイで1度だけ)
+    struct SaidFlags
+    {
+        bool gate_hit        = false;
+        bool gate_half       = false;
+        bool gate_low        = false;
+        bool stalker         = false;
+        bool civilian_half   = false;
+        bool civilian_almost = false;
+        bool player_hit      = false;
+        bool player_low      = false;
+    };
+    SaidFlags said_;
+    float     prevPlayerHP_      = -1.0f;    //player HP last frame, -1 = not read yet(前フレームのプレイヤーHP。-1=未取得)
+    float     endingTimer_       = 0.0f;     //time left before the fade out(フェードアウトまでの残り時間)
+    bool      endingFadeStarted_ = false;
 
     ZombieSpawner spawner_;    //all zombie spawning lives here now(ゾンビの出現処理は全部ここ)
 
