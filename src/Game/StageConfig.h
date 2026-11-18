@@ -143,17 +143,16 @@ inline constexpr float ENDING_HOLD_TIME      = 2.0f;      //MainStage: time betw
 inline constexpr float SNIPER_DOWN_RED_ALPHA = 140.0f;    //how red the screen gets when the sniper is down(狙撃手ダウン時の画面の赤さ)
 
 //WIN: helicopter extraction (GameOver)(勝ち: ヘリで脱出)
-inline const float3    HELI_WIN_START    = {-298.208f, 759.805f, -115.020f};    //W1
-inline const float3    HELI_WIN_HOVER    = {-34.072f, 432.310f, 716.091f};      //W2
-inline const float3    HELI_WIN_LEAVE    = {646.338f, 705.514f, -24.993f};      //W3
-inline constexpr float HELI_FLY_IN_TIME  = 2.5f;                                //W1 -> W2. the 3 times add up to 6.0(W1→W2。3つの合計が6.0)
-inline constexpr float HELI_HOVER_TIME   = 1.5f;                                //stay at W2 = pickup(W2で待つ=乗り込み)
-inline constexpr float HELI_FLY_OUT_TIME = 2.0f;                                //W2 -> W3
-inline constexpr float HELI_MODEL_YAW_OFFSET =
-    0.0f;    //if the heli flies sideways/backwards, change this (90, 180, -90)(ヘリが横・後ろ向きに飛ぶならこれを変える)
-inline constexpr float HELI_HOVER_BOB       = 3.0f;                              //up/down wobble while hovering(ホバリング中の上下の揺れ)
-inline const float3    WIN_CAMERA_EYE_START = {522.771f, 425.551f, 766.159f};    //C1
-inline const float3    WIN_CAMERA_EYE_END   = {465.627f, 226.021f, -32.911f};    //C2
+//the heli is already waiting next to the tower (it evacuated the civilians from there), so it starts at W2(ヘリは既に塔の横で待っている(そこから市民を避難させた)ので、W2から始まる)
+inline const float3    HELI_WIN_HOVER    = {-34.072f, 432.310f, 716.091f};    //W2
+inline const float3    HELI_WIN_LEAVE    = {646.338f, 705.514f, -24.993f};    //W3
+inline constexpr float HELI_HOVER_TIME   = 3.0f;    //hover at W2 = the sniper gets in. the 2 times add up to 6.0(W2でホバリング=狙撃手が乗る。2つの合計が6.0)
+inline constexpr float HELI_FLY_OUT_TIME = 3.0f;    //W2 -> W3
+//the model's nose points to its local -X, so +90 makes it face the travel direction (from the old cutscene: yaw -90 flew toward -Z)(モデルの機首はローカル-X向きなので+90で進行方向を向く。旧カットシーン: ヨー-90で-Z方向に飛んでいた)
+inline constexpr float HELI_MODEL_YAW_OFFSET = 90.0f;
+inline constexpr float HELI_HOVER_BOB        = 3.0f;                              //up/down wobble while hovering(ホバリング中の上下の揺れ)
+inline const float3    WIN_CAMERA_EYE_START  = {522.771f, 425.551f, 766.159f};    //C1
+inline const float3    WIN_CAMERA_EYE_END    = {465.627f, 226.021f, -32.911f};    //C2
 
 //LOSE: sniper down (GameOver)(負け: 狙撃手ダウン)
 inline const CameraShot SNIPER_DOWN_SHOT = {

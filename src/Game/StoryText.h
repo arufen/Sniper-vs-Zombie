@@ -52,10 +52,9 @@ inline constexpr const char* RADIO_END_SNIPER = "狙撃手、応答しろ！狙�
 //---------------------------------------------------------------------------
 // GAME OVER(ゲームオーバー)
 //---------------------------------------------------------------------------
-inline constexpr const char* RADIO_HELI_INBOUND = "こちら救助ヘリ。狙撃手、迎えに来たぞ！";    //EN: Rescue chopper here. Sniper, we've come to get you!
-inline constexpr const char* RADIO_HELI_PICKUP  = "乗れ！ここを離れるぞ！";                    //EN: Get in! We're getting out of here!
-inline constexpr const char* RADIO_HELI_ESCAPE  = "脱出成功。よくやった、狙撃手。";            //EN: Extraction complete. Good work, sniper.
-inline constexpr const char* RADIO_GATE_LOST    = "ビルに侵入された…作戦は失敗だ。";           //EN: They're inside the building... the operation has failed.
+inline constexpr const char* RADIO_HELI_PICKUP = "乗れ！ここを離れるぞ！";             //EN: Get in! We're getting out of here!
+inline constexpr const char* RADIO_HELI_ESCAPE = "脱出成功。よくやった、狙撃手。";     //EN: Extraction complete. Good work, sniper.
+inline constexpr const char* RADIO_GATE_LOST   = "ビルに侵入された…作戦は失敗だ。";    //EN: They're inside the building... the operation has failed.
 inline constexpr const char* RADIO_SNIPER_LOST =
     "狙撃手からの応答なし…ゲートの守りが消えた。";    //EN: No response from the sniper... the gate has no defense left.
 

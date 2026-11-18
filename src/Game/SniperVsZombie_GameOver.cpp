@@ -105,11 +105,10 @@ bool SniperVsZombie_GameOver::Init()
 
 void SniperVsZombie_GameOver::SetupWin()
 {
-    //HELICOPTER: W1 -> W2 (arrive) -> hover = pickup -> W3 (leave)(ヘリ: W1→W2(到着)→ホバリング=乗り込み→W3(離脱))
+    //HELICOPTER: already at W2 next to the tower -> hover = pickup -> W3 (leave)(ヘリ: 既に塔の横のW2→ホバリング=乗り込み→W3(離脱))
     if(auto heli = helicopter_.lock()) {
         heli->AddComponent<ComponentFlightPath>()
-            ->AddPoint(Config::HELI_WIN_START, 0.0f)
-            ->AddPoint(Config::HELI_WIN_HOVER, Config::HELI_FLY_IN_TIME)
+            ->AddPoint(Config::HELI_WIN_HOVER, 0.0f)
             ->AddPoint(Config::HELI_WIN_HOVER, Config::HELI_HOVER_TIME)
             ->AddPoint(Config::HELI_WIN_LEAVE, Config::HELI_FLY_OUT_TIME)
             ->SetFaceTravel(true, Config::HELI_MODEL_YAW_OFFSET)
@@ -118,16 +117,16 @@ void SniperVsZombie_GameOver::SetupWin()
     }
 
     //CAMERA: one long smooth move C1 -> C2, always looking at the helicopter(カメラ: C1→C2の長い1ショット。常にヘリを見る)
-    const float total = Config::HELI_FLY_IN_TIME + Config::HELI_HOVER_TIME + Config::HELI_FLY_OUT_TIME;
+    const float total = Config::HELI_HOVER_TIME + Config::HELI_FLY_OUT_TIME;
     cutscene_->SetShots({
-        {Config::WIN_CAMERA_EYE_START, Config::HELI_WIN_START, Config::WIN_CAMERA_EYE_END, Config::HELI_WIN_LEAVE, total}
+        {Config::WIN_CAMERA_EYE_START, Config::HELI_WIN_HOVER, Config::WIN_CAMERA_EYE_END, Config::HELI_WIN_LEAVE, total}
     });
     cutscene_->SetFollowTarget(helicopter_);
 
     sfxHeli_ = Sound::Load(Assets::SFX_HELI_ROTOR_LOOP);
     Sound::PlayLoop(sfxHeli_, Config::SFX_HELI_VOLUME);
 
-    radio_->Say(Story::RADIO_HELI_INBOUND);
+    radio_->Say(Story::RADIO_HELI_PICKUP);
     winRadioStep_ = 1;
 }
 
@@ -205,14 +204,10 @@ void SniperVsZombie_GameOver::UpdateWinRadio()
 {
     const float t = cutscene_ ? cutscene_->GetTime() : 0.0f;
 
-    //heli arrives at W2 -> "get in", heli leaves -> "extraction complete"(ヘリがW2に着く→「乗れ」、離脱→「脱出成功」)
-    if(winRadioStep_ == 1 && t >= Config::HELI_FLY_IN_TIME) {
-        radio_->Say(Story::RADIO_HELI_PICKUP);
-        winRadioStep_ = 2;
-    }
-    else if(winRadioStep_ == 2 && t >= Config::HELI_FLY_IN_TIME + Config::HELI_HOVER_TIME) {
+    //"get in" plays at the start, heli leaves -> "extraction complete"(「乗れ」は開始時、離脱→「脱出成功」)
+    if(winRadioStep_ == 1 && t >= Config::HELI_HOVER_TIME) {
         radio_->Say(Story::RADIO_HELI_ESCAPE);
-        winRadioStep_ = 3;
+        winRadioStep_ = 2;
     }
 }
 
