@@ -7,9 +7,19 @@
 #include <Game/Component/ComponentBlackScreen.h>
 #include <Game/Component/ComponentPlayerStats.h>
 #include <Game/Component/ComponentEnemyDeath.h>
+#include <Game/Component/ComponentCameraPath.h>
+#include <Game/Component/ComponentRadio.h>
 #include "ZombieSpawner.h"
 
 namespace SniperVsZombie {
+
+//what the stage is doing right now(ステージが今何をしているか)
+enum class StageState
+{
+    Opening,    //cutscene camera, no zombies, no control(カットシーン。ゾンビなし、操作なし)
+    Playing,    //normal game(通常のゲーム)
+    Ending,     //won or lost, short hold before the fade(勝ち/負けが決まり、フェード前の短い待ち)
+};
 
 //the stage: builds the map, owns the spawner, tracks civilians / score, decides win or lose, draws the HUD(ステージ: マップ作成、スポナー所持、市民とスコア管理、勝敗判定、HUD描画)
 class SniperVsZombie_MainStage : public Scene::Base
@@ -33,6 +43,16 @@ private:
 
     void CreateMap();
 
+    //OPENING: camera shots O1 -> O2 -> O3, then the player gets control(オープニング: O1→O2→O3の後、プレイヤーが操作できる)
+    void StartOpening();
+    void OnOpeningFinished();
+
+    //true = the player can look and shoot, and sees the gun(true=視点操作・射撃ができ、銃が見える)
+    void SetPlayerControl(bool enable);
+
+    //true for one frame when the left mouse button goes down(左クリックを押した瞬間の1フレームだけtrue)
+    bool IsClickStarted();
+
     //every zombie death comes here, wired through ZombieSpawner(全ゾンビの死亡はここに来る。ZombieSpawner経由)
     void OnZombieKilled(const ComponentEnemyDeath::KillInfo& kill);
 
@@ -48,6 +68,12 @@ private:
     void OnGameOver(bool isWin, bool breakGate);
 
     ZombieSpawner spawner_;    //all zombie spawning lives here now(ゾンビの出現処理は全部ここ)
+
+    StageState             stageState_ = StageState::Opening;
+    ComponentCameraPathPtr opening_;         //opening cutscene camera(オープニングのカットシーンカメラ)
+    ComponentRadioPtr      radio_;           //radio subtitles(無線字幕)
+    std::weak_ptr<Object>  playerCamera_;    //the FPS camera object (look + shoot + gun)(FPSカメラObject。視点・射撃・銃)
+    bool wasLeftMouseDown_ = true;           //for IsClickStarted. true = a held click from the last scene does not count(押しっぱなしのクリックは数えない)
 
     int   score_               = 0;
     float gateHP_              = 9999.0f;

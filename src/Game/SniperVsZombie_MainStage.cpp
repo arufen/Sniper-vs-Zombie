@@ -16,6 +16,7 @@
 #include "SniperVsZombie_Gate.h"
 #include "SniperVsZombie_GameOver.h"
 #include "HudText.h"
+#include "StoryText.h"
 #include <Game/Component/ComponentFPSCameraController.h>
 #include <Game/Component/ComponentBlackScreen.h>
 #include <algorithm>
@@ -37,9 +38,11 @@ bool SniperVsZombie_MainStage::Init()
     gateHP_    = gate->GetHP();
     gatePos_   = Config::GATE_POSITION;    // save it so PostDraw can use it for the arrow marker
 
-    //CAMERA
+    //CAMERA - the player's FPS view. frozen until the opening ends(プレイヤーのFPS視点。オープニングが終わるまで止めておく)
     auto camera = Scene::Object::Create<Camera>()->SetTranslate(Config::PLAYER_SPAWN_POSITION);
     camera->SetRotationAxisXYZ(Config::PLAYER_SPAWN_ROTATION);
+    playerCamera_ = camera;
+    SetPlayerControl(false);
 
     //PLAYER - hit body + HP. view and shooting stay in the Camera above(プレイヤー。当たり判定とHP。視点と射撃は上のCamera)
     auto player  = Scene::Object::Create<Player>()->SetTranslate(Config::PLAYER_SPAWN_POSITION + Config::PLAYER_EYE_TO_BODY);
@@ -48,14 +51,11 @@ bool SniperVsZombie_MainStage::Init()
     //MAP
     CreateMap();
 
-    //ZOMBIES - every death goes to OnZombieKilled(ゾンビ。全ての死亡はOnZombieKilledへ)
+    //ZOMBIES - every death goes to OnZombieKilled. the first zombie comes when the opening ends(ゾンビ。全ての死亡はOnZombieKilledへ。最初の1体はオープニング後)
     spawner_.SetOnZombieKilled([this](const ComponentEnemyDeath::KillInfo& kill) { OnZombieKilled(kill); });
 
-    //first one goes out right away, the rest come from the spawner timer in Update()(最初の1体はすぐ出す。残りはUpdateのスポナータイマーから)
-    spawner_.SpawnZombie(ZombieType::Normal);
-
-    //TEST: stalker right away. remove this line when the stalker is tuned(テスト: すぐストーカーを出す。調整が終わったらこの行を消す)
-    spawner_.SpawnZombie(ZombieType::Stalker);
+    //RADIO(無線)
+    radio_ = CreateRadio();
 
     //UI
     {
@@ -67,13 +67,66 @@ bool SniperVsZombie_MainStage::Init()
     //EFFECT
     hitEffectHandle_ = LoadEffekseerEffect("data/Sample/Effects/hit_eff.efkefc");
 
-    //BLACK SCREEN TRANSITION
+    //BLACK SCREEN TRANSITION - only for leaving. the opening does its own short fade in(退出用のみ。オープニングが自分で短くフェードインする)
     auto blackScreenObj = Scene::Object::Create<Object>();
     blackScreenObj->SetName(Names::BLACK_SCREEN);
     blackScreen_ = blackScreenObj->AddComponent<ComponentBlackScreen>();
-    blackScreen_->StartFadeIn();    // start fully black, fade INTO the stage
+
+    StartOpening();
 
     return true;
+}
+
+void SniperVsZombie_MainStage::StartOpening()
+{
+    stageState_ = StageState::Opening;
+
+    auto cutscene_obj = Scene::Object::Create<Object>();
+    cutscene_obj->SetName(Names::CUTSCENE_CAMERA);
+    opening_ = cutscene_obj->AddComponent<ComponentCameraPath>();
+    opening_->SetShots(Config::OPENING_SHOTS)
+        ->SetFadeInAtStart(true)    //the 2s black screen fade would eat most of O1, so a short own fade(2秒の暗転だとO1がほぼ隠れるので、短い自前フェード)
+        ->SetOnFinished([this]() { OnOpeningFinished(); });
+    opening_->Play();
+}
+
+void SniperVsZombie_MainStage::OnOpeningFinished()
+{
+    //give the view back to the FPS camera. O3 ends exactly at P0, so it does not jump(FPSカメラに視点を返す。O3はP0で終わるので飛ばない)
+    opening_->ReleaseCamera();
+
+    if(auto camera = playerCamera_.lock()) {
+        if(auto controller = camera->GetComponent<ComponentFPSCameraController>())
+            controller->SetLookAngles(Config::PLAYER_START_YAW, Config::PLAYER_START_PITCH);
+    }
+    SetPlayerControl(true);
+
+    stageState_ = StageState::Playing;
+
+    //first zombie right away, the rest come from the spawner timer(最初の1体はすぐ。残りはスポナーのタイマーから)
+    spawner_.SpawnZombie(ZombieType::Normal);
+
+    radio_->Say(Story::RADIO_MISSION_START);
+    radio_->Say(Story::RADIO_OBJECTIVE);
+}
+
+void SniperVsZombie_MainStage::SetPlayerControl(bool enable)
+{
+    auto camera = playerCamera_.lock();
+    if(!camera)
+        return;
+
+    //NoUpdate stops look + shooting, NoDraw hides the gun and the scope(NoUpdateで視点と射撃を止め、NoDrawで銃とスコープを隠す)
+    camera->SetStatus(Object::StatusBit::NoUpdate, !enable);
+    camera->SetStatus(Object::StatusBit::NoDraw, !enable);
+}
+
+bool SniperVsZombie_MainStage::IsClickStarted()
+{
+    const bool left_down   = (GetMouseInput() & MOUSE_INPUT_LEFT) != 0;
+    const bool click_start = left_down && !wasLeftMouseDown_;
+    wasLeftMouseDown_      = left_down;
+    return click_start;
 }
 
 void SniperVsZombie_MainStage::ResetStageState()
@@ -88,6 +141,8 @@ void SniperVsZombie_MainStage::ResetStageState()
     hitmarkerAlpha_      = 0;
     hitmarkerIsHeadshot_ = false;
     arrowTimer_          = 0.0f;
+    stageState_          = StageState::Opening;
+    wasLeftMouseDown_    = true;
 }
 
 void SniperVsZombie_MainStage::CreateMap()
@@ -173,12 +228,22 @@ void SniperVsZombie_MainStage::OnGameOver(bool isWin, bool breakGate)
 
 void SniperVsZombie_MainStage::Update()
 {
+    const bool click_started = IsClickStarted();
+
+    //OPENING - nothing moves, a click skips the cutscene(オープニング。何も動かない。クリックでスキップ)
+    if(stageState_ == StageState::Opening) {
+        if(click_started && opening_)
+            opening_->Skip();
+        return;
+    }
+
     //ZOMBIES - no new zombies once the game is over(ゾンビ。ゲーム終了後は新しく出さない)
     if(!isGameOver_)
         spawner_.Update(GetDeltaTime(), GetStageProgress());
 
-    //Update civilians count
-    UpdateCivilian();
+    //Update civilians count. stops at the end, so the counter does not change after the result(市民数を更新。終了後は結果が変わらないよう止める)
+    if(!isGameOver_)
+        UpdateCivilian();
 
     //Get gate HP
     if(auto gate = Scene::Object::Get<Gate>(Names::GATE)) {
@@ -217,11 +282,21 @@ void SniperVsZombie_MainStage::PostDraw()
 {
     __super::PostDraw();
 
+    const int          line  = Hud::GetLineHeight();
+    const unsigned int white = GetColor(255, 255, 255);
+
+    //OPENING - no HUD, only the fade cuts + skip hint(オープニング。HUDなし、フェードカットとスキップ案内だけ)
+    if(stageState_ == StageState::Opening) {
+        if(opening_)
+            opening_->DrawFade();
+        Hud::DrawLabelRight(WINDOW_W - 20, WINDOW_H - 20 - line, GetColor(200, 200, 200), "%s", Story::OPENING_SKIP);
+        blackScreen_->DrawBlackScreen();
+        return;
+    }
+
     //----------------------------------------------------------
     // HUD - all text uses Hud:: = bigger font with a black outline(HUD - 文字は全部Hud::を使う=大きめで黒い縁取り付き)
     //----------------------------------------------------------
-    const int          line  = Hud::GetLineHeight();
-    const unsigned int white = GetColor(255, 255, 255);
 
     //SCORE(スコア)
     const int left_y = 50;
@@ -305,6 +380,11 @@ void SniperVsZombie_MainStage::PostDraw()
     //PLAYER HP UI + red hit flash(プレイヤーHP表示と被弾の赤フラッシュ)
     if(auto stats = playerStats_.lock())
         stats->DrawHUD();
+
+    //RADIO subtitles, then the short fade after a skipped opening(無線字幕、その後スキップ後の短いフェード)
+    radio_->DrawRadio();
+    if(opening_)
+        opening_->DrawFade();
 
     //BLACK SCREEN TRANSITION - draw LAST so it covers everything above during fades
     blackScreen_->DrawBlackScreen();
