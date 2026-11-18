@@ -30,6 +30,13 @@ inline constexpr const char* STALKER       = "Stalker";
 //UI / system(UI・システム)
 inline constexpr const char* BLACK_SCREEN  = "BlackScreen";
 inline constexpr const char* SHADER_CAMERA = "ShaderCamera";
-inline constexpr const char* CAMERA_PROBE  = "CameraProbe";    //dev tool, Debug builds only(開発ツール。Debugビルドのみ)
+inline constexpr const char* RADIO         = "Radio";
+inline constexpr const char* CAMERA_PROBE  = "CameraProbe";
+
+//cutscenes(カットシーン)
+inline constexpr const char* CUTSCENE_CAMERA = "CutsceneCamera";
+inline constexpr const char* CUTSCENE_PLAYER = "CutscenePlayer";    //dead sniper body (GameOver)(倒れた狙撃手の体)
+inline constexpr const char* CUTSCENE_STALKER =
+    "CutsceneStalker";    //stalker over the body (GameOver)(体の上のストーカー)    //dev tool, Debug builds only(開発ツール。Debugビルドのみ)
 
 }    // namespace SniperVsZombie::Names

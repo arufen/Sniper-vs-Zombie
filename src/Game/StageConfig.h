@@ -93,4 +93,87 @@ inline const std::vector<StalkerLane> STALKER_LANES = {
      {{-24.335f, 213.863f, 579.770f}, {54.302f, 290.719f, 428.799f}, {158.154f, 186.736f, 561.080f}, {447.0f, 222.0f, 600.0f}}},
 };
 
+//---------------------------------------------------------------------------
+// STORY / CUTSCENES(ストーリー・カットシーン)
+// positions came from the CameraProbe (F8), see AI Context/PositionsCollections.md(位置はCameraProbe(F8)で取得。PositionsCollections.md参照)
+//---------------------------------------------------------------------------
+
+//one camera shot = blend from A to B (eye = camera position, target = where it looks)(1ショット=AからBへブレンド。eye=カメラ位置、target=注視点)
+struct CameraShot
+{
+    float3 eye_a;
+    float3 target_a;
+    float3 eye_b;
+    float3 target_b;
+    float  duration;    //seconds(秒)
+};
+
+inline constexpr float CUT_FADE_TIME =
+    1.0f;    //fade between 2 shots, total. half at the end of a shot, half at the start of the next(ショット間のフェード合計。半分を前ショットの最後、半分を次の最初に重ねる)
+
+//INTRO(イントロ)
+inline constexpr float INTRO_LINE_INTERVAL = 1.2f;    //seconds between 2 story lines appearing(ストーリー行が出る間隔・秒)
+inline constexpr float INTRO_LINE_FADE     = 0.6f;    //fade-in time of one line(1行のフェードイン時間)
+
+//OPENING (MainStage)(オープニング)
+inline const std::vector<CameraShot> OPENING_SHOTS = {
+    //O1: look at the ground, tilt up to the helicopter(O1: 地面を見て、ヘリへ見上げる)
+    {{420.526f, 303.759f, 445.839f}, {345.379f, 267.124f, 500.709f}, {420.526f, 303.759f, 445.839f}, {338.548f, 310.346f, 502.726f}, 3.0f},
+    //O2: push forward to the gate(O2: ゲートへ前進)
+    {{205.136f, 135.576f, 651.688f},  {141.357f, 76.477f, 701.079f},  {114.261f, 68.438f, 669.705f},   {73.484f, 21.526f, 748.041f}, 2.0f},
+    //O3: fly into the player's eyes (B = P0)(O3: プレイヤーの目へ飛ぶ。B=P0)
+    {{464.041f, 285.927f, 456.949f}, {419.590f, 233.830f, 529.818f}, {447.147f, 233.306f, 585.323f}, {357.566f, 197.144f, 611.160f}, 2.0f},
+};
+inline constexpr float PLAYER_START_YAW   = -73.91f;    //P0 look, from CameraProbe "look"(P0の視線。CameraProbeの"look")
+inline constexpr float PLAYER_START_PITCH = 21.20f;
+
+//RADIO(無線)
+inline constexpr float RADIO_MIN_TIME = 2.0f;    //shortest time a message stays(メッセージの最短表示時間)
+inline constexpr float RADIO_CHARS_PER_SECOND =
+    5.0f;                                          //longer text stays longer: time = max(MIN, chars / this)(長い文ほど長く表示: 時間=max(MIN, 文字数/これ))
+inline constexpr float RADIO_FADE_TIME = 0.25f;    //fade in/out of the subtitle box(字幕ボックスのフェード)
+inline constexpr float RADIO_GAP_TIME  = 0.3f;     //empty time between 2 messages(2つのメッセージの間の空き時間)
+
+//STORY BEATS(ストーリーの節目)
+inline constexpr float GATE_WARN_HALF        = 0.5f;      //gate HP ratio for the "half" warning(「半分」警告のゲートHP割合)
+inline constexpr float GATE_WARN_LOW         = 0.25f;     //gate HP ratio for the "low" warning(「残りわずか」警告のゲートHP割合)
+inline constexpr float PLAYER_WARN_LOW       = 0.3f;      //player HP ratio for the "badly hurt" line(「重傷」の無線のプレイヤーHP割合)
+inline constexpr int   CIVILIAN_ALMOST_LEFT  = 3;         //"almost everyone" when this many are left(残りこの人数で「あと少し」)
+inline constexpr float ENDING_HOLD_TIME      = 2.0f;      //MainStage: time between the end and the fade out(MainStage: 終了からフェードアウトまでの時間)
+inline constexpr float SNIPER_DOWN_RED_ALPHA = 140.0f;    //how red the screen gets when the sniper is down(狙撃手ダウン時の画面の赤さ)
+
+//WIN: helicopter extraction (GameOver)(勝ち: ヘリで脱出)
+inline const float3    HELI_WIN_START    = {-298.208f, 759.805f, -115.020f};    //W1
+inline const float3    HELI_WIN_HOVER    = {-34.072f, 432.310f, 716.091f};      //W2
+inline const float3    HELI_WIN_LEAVE    = {646.338f, 705.514f, -24.993f};      //W3
+inline constexpr float HELI_FLY_IN_TIME  = 2.5f;                                //W1 -> W2. the 3 times add up to 6.0(W1→W2。3つの合計が6.0)
+inline constexpr float HELI_HOVER_TIME   = 1.5f;                                //stay at W2 = pickup(W2で待つ=乗り込み)
+inline constexpr float HELI_FLY_OUT_TIME = 2.0f;                                //W2 -> W3
+inline constexpr float HELI_MODEL_YAW_OFFSET =
+    0.0f;    //if the heli flies sideways/backwards, change this (90, 180, -90)(ヘリが横・後ろ向きに飛ぶならこれを変える)
+inline constexpr float HELI_HOVER_BOB       = 3.0f;                              //up/down wobble while hovering(ホバリング中の上下の揺れ)
+inline const float3    WIN_CAMERA_EYE_START = {522.771f, 425.551f, 766.159f};    //C1
+inline const float3    WIN_CAMERA_EYE_END   = {465.627f, 226.021f, -32.911f};    //C2
+
+//LOSE: sniper down (GameOver)(負け: 狙撃手ダウン)
+inline const CameraShot SNIPER_DOWN_SHOT = {
+    {538.754f, 353.812f, 452.773f},
+    {504.198f, 286.260f, 517.908f},
+    {505.555f, 290.313f, 513.613f},
+    {470.609f, 222.761f, 578.539f},
+    1.0f
+};    //S10 -> S11
+
+//LOSE: gate breached (GameOver)(負け: ゲート突破)
+inline const CameraShot GATE_BREACH_SHOT = {
+    {69.047f, 150.509f, 654.136f},
+    {68.923f,  66.708f, 708.703f},
+    {68.773f,  65.944f, 673.842f},
+    {69.079f,  17.860f, 761.522f},
+    2.0f
+};    //L10 -> L11
+
+inline constexpr float RESULT_DELAY =
+    0.5f;    //GameOver: wait after the cutscene before the result + buttons show(カットシーン後、結果とボタンが出るまでの待ち)
+
 }    // namespace SniperVsZombie::Config
