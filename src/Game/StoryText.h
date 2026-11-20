@@ -64,6 +64,13 @@ inline constexpr const char* RESULT_WIN_JP    = "救出作戦完了";    //EN: R
 inline constexpr const char* RESULT_LOSE_EN   = "Rescue failed";
 inline constexpr const char* RESULT_GATE_JP   = "ゲートが突破された";    //EN: The gate was breached
 inline constexpr const char* RESULT_SNIPER_JP = "狙撃手がやられた";      //EN: The sniper was killed
-inline constexpr const char* RESULT_SCORE     = "スコア: %d";            //EN: Score: %d
+//result stats table: label on the left, number on the right(結果の数値表: 左に名前、右に数値)
+inline constexpr const char* RESULT_STAT_SCORE     = "スコア";              //EN: Score
+inline constexpr const char* RESULT_STAT_CIVILIANS = "救出した市民";        //EN: Civilians saved
+inline constexpr const char* RESULT_STAT_KILLS     = "倒したゾンビ";        //EN: Zombies killed
+inline constexpr const char* RESULT_STAT_HEADSHOT  = "ヘッドショット率";    //EN: Headshot rate
+inline constexpr const char* RESULT_STAT_ACCURACY  = "命中率";              //EN: Accuracy
+inline constexpr const char* RESULT_STAT_GATE      = "ゲート耐久";          //EN: Gate strength left
+inline constexpr const char* RESULT_STAT_TIME      = "プレイ時間";          //EN: Play time
 
 }    // namespace SniperVsZombie::Story

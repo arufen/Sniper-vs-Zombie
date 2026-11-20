@@ -72,6 +72,9 @@ private:
     void OnGameOver(GameResult result);
     void UpdateEnding();
 
+    //everything the result screen shows, as it is right now(結果画面に出す全ての数値。今の値)
+    StageStats CollectStats() const;
+
     //PAUSE: freeze every object except the menu + fader, and show the menu(ポーズ: メニューとフェード以外の全Objectを止め、メニューを出す)
     void SetPaused(bool paused);
     //RESTART / MENU from the pause menu: fade out, then change scene(ポーズメニューからやり直し/メニュー: フェード後にシーン変更)
@@ -128,6 +131,9 @@ private:
     bool wasLeftMouseDown_ = true;           //for IsClickStarted. true = a held click from the last scene does not count(押しっぱなしのクリックは数えない)
 
     int        score_               = 0;
+    int        kills_               = 0;       //for the result screen(結果画面用)
+    int        headshots_           = 0;       //for the result screen(結果画面用)
+    float      playTime_            = 0.0f;    //seconds of real play, no opening / pause(実際のプレイ秒数。オープニングとポーズ除く)
     float      gateHP_              = 9999.0f;
     float      gateMaxHP_           = 9999.0f;
     bool       isGameOver_          = false;

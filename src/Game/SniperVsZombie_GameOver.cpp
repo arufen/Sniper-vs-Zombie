@@ -294,9 +294,8 @@ void SniperVsZombie_GameOver::PostDraw()
                 result_ == GameResult::SniperDown ? Story::RESULT_SNIPER_JP : Story::RESULT_GATE_JP, GetColor(255, 0, 0), 0, WINDOW_H / 2 + 32, 1);
         }
 
-        SetFontSize(30);
-        DrawFormatString(WINDOW_W / 2 - 100, WINDOW_H / 2 + 130, GetColor(255, 255, 255), Story::RESULT_SCORE, finalScore_);
         SetFontSize(20);
+        DrawStats();
 
         if(retryButton_)
             retryButton_->DrawButton();
@@ -306,6 +305,47 @@ void SniperVsZombie_GameOver::PostDraw()
 
     //BLACK SCREEN TRANSITION - draw LAST so it covers everything above during fades
     blackScreen_->DrawBlackScreen();
+}
+
+void SniperVsZombie_GameOver::DrawStats()
+{
+    //2 columns around the screen center: gray label right-aligned, white number left-aligned(画面中央を挟んで2列: 灰色の名前は右寄せ、白い数値は左寄せ)
+    const int          center_x = WINDOW_W / 2;
+    const int          gap      = 16;
+    const int          line     = Hud::GetLineHeight();
+    const unsigned int gray     = GetColor(190, 190, 190);
+    const unsigned int white    = GetColor(255, 255, 255);
+    int                y        = WINDOW_H / 2 + 95;    //under the big result title(大きな結果タイトルの下)
+
+    auto label = [&](const char* text) { Hud::DrawLabelRight(center_x - gap, y, gray, "%s", text); };
+
+    label(Story::RESULT_STAT_SCORE);
+    Hud::DrawLabel(center_x + gap, y, white, "%d", stats_.score);
+    y += line;
+
+    label(Story::RESULT_STAT_CIVILIANS);
+    Hud::DrawLabel(center_x + gap, y, white, "%d / %d", stats_.civilians_saved, stats_.civilians_total);
+    y += line;
+
+    label(Story::RESULT_STAT_KILLS);
+    Hud::DrawLabel(center_x + gap, y, white, "%d", stats_.kills);
+    y += line;
+
+    label(Story::RESULT_STAT_HEADSHOT);
+    Hud::DrawLabel(center_x + gap, y, white, "%d%%  (%d / %d)", stats_.GetHeadshotPercent(), stats_.headshots, stats_.kills);
+    y += line;
+
+    label(Story::RESULT_STAT_ACCURACY);
+    Hud::DrawLabel(center_x + gap, y, white, "%d%%  (%d / %d)", stats_.GetAccuracyPercent(), stats_.kills, stats_.shots);
+    y += line;
+
+    label(Story::RESULT_STAT_GATE);
+    Hud::DrawLabel(center_x + gap, y, white, "%d%%", static_cast<int>(stats_.gate_hp_ratio * 100.0f + 0.5f));
+    y += line;
+
+    const int seconds = static_cast<int>(stats_.play_time);
+    label(Story::RESULT_STAT_TIME);
+    Hud::DrawLabel(center_x + gap, y, white, "%d:%02d", seconds / 60, seconds % 60);
 }
 
 void SniperVsZombie_GameOver::Exit()

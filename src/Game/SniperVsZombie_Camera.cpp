@@ -112,6 +112,7 @@ void Camera::Update()
             if(isAbleToShoot) {
                 Shoot();
                 shootCurrentTime = shootIntervalTime;
+                shots_fired_++;
             }
         }
     }

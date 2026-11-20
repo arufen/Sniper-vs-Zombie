@@ -166,6 +166,9 @@ void SniperVsZombie_MainStage::ResetStageState()
     hitmarkerAlpha_      = 0;
     hitmarkerIsHeadshot_ = false;
     popups_.Clear();
+    kills_             = 0;
+    headshots_         = 0;
+    playTime_          = 0.0f;
     paused_            = false;
     leaving_           = false;
     arrowTimer_        = 0.0f;
@@ -204,6 +207,11 @@ void SniperVsZombie_MainStage::OnZombieKilled(const ComponentEnemyDeath::KillInf
 
     //SHOT FEEL: floating score + a kill sound, stronger for a headshot(撃った手応え: 浮かぶスコアとキル音。ヘッドショットは強め)
     popups_.Add(kill.position, kill.score, kill.headshot);
+
+    //STATS for the result screen(結果画面用の集計)
+    kills_++;
+    if(kill.headshot)
+        headshots_++;
     Sound::Play(kill.headshot ? sfxHeadshot_ : sfxKill_, Config::SFX_KILL_VOLUME);
 }
 
@@ -427,13 +435,28 @@ void SniperVsZombie_MainStage::UpdateEnding()
 
     endingFadeStarted_ = true;
 
-    // capture the result + the score AS IT IS RIGHT NOW into the lambda, so the callback
-    // still has the correct values later even if score_ changes in the meantime
-    blackScreen_->StartFadeOut([result = result_, finalScore = score_]() {
+    // capture the result + the stats AS THEY ARE RIGHT NOW into the lambda, so the callback
+    // still has the correct values later even if they change in the meantime
+    blackScreen_->StartFadeOut([result = result_, stats = CollectStats()]() {
         auto gameOverScene = Scene::GetScene<SniperVsZombie_GameOver>();
-        gameOverScene->SetResult(result, finalScore);
+        gameOverScene->SetResult(result, stats);
         Scene::Change(gameOverScene);
     });
+}
+
+StageStats SniperVsZombie_MainStage::CollectStats() const
+{
+    StageStats stats;
+    stats.score           = score_;
+    stats.kills           = kills_;
+    stats.headshots       = headshots_;
+    stats.civilians_saved = civilianSaved_;
+    stats.civilians_total = Config::CIVILIAN_TOTAL;
+    stats.gate_hp_ratio   = gateMaxHP_ > 0.0f ? std::clamp(gateHP_ / gateMaxHP_, 0.0f, 1.0f) : 0.0f;
+    stats.play_time       = playTime_;
+    if(auto shooter = std::dynamic_pointer_cast<Camera>(playerCamera_.lock()))
+        stats.shots = shooter->GetShotsFired();
+    return stats;
 }
 
 void SniperVsZombie_MainStage::Update()
@@ -465,6 +488,10 @@ void SniperVsZombie_MainStage::Update()
     if(auto gate = Scene::Object::Get<Gate>(Names::GATE)) {
         gateHP_ = gate->GetHP();
     }
+
+    //PLAY TIME for the result screen. the pause already returned above, so it is not counted(結果画面用のプレイ時間。ポーズは上でreturn済みなので数えない)
+    if(!isGameOver_)
+        playTime_ += GetDeltaTime();
 
     if(groanCooldown_ > 0.0f)
         groanCooldown_ -= GetDeltaTime();
