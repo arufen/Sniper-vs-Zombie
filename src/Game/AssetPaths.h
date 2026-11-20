@@ -15,6 +15,8 @@ inline constexpr const char* SFX_ZOMBIE_GROAN    = "data/Game/Audio/sfx_zombie_g
 inline constexpr const char* SFX_STALKER_SCREECH = "data/Game/Audio/sfx_stalker_screech.mp3";
 inline constexpr const char* SFX_HELI_ROTOR_LOOP = "data/Game/Audio/sfx_heli_rotor_loop.mp3";
 inline constexpr const char* SFX_PLAYER_HURT     = "data/Game/Audio/sfx_player_hurt.mp3";
+inline constexpr const char* SFX_KILL_CONFIRM    = "data/Game/Audio/sfx_kill_confirm.mp3";    //body kill, short "tick"(胴体キル。短い「カチッ」)
+inline constexpr const char* SFX_HEADSHOT        = "data/Game/Audio/sfx_headshot.mp3";        //headshot kill, stronger(ヘッドショットキル。強め)
 
 //BGM
 inline constexpr const char* BGM_MENU  = "data/Game/Audio/bgm_menu.mp3";

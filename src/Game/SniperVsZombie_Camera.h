@@ -28,6 +28,8 @@ private:
     float shootIntervalTime = Config::SHOT_INTERVAL;    //from StageConfig.h(StageConfig.hから)
     float shootCurrentTime  = shootIntervalTime;
 
+    float gun_kick_ = 0.0f;    //1 = gun fully pushed back by the shot, 0 = at rest(1=撃った反動で銃が一番後ろ、0=元の位置)
+
     int shootSoundHandle_ = -1;    //!< sniper shot SFX, loaded in Init()
 };
 }    // namespace SniperVsZombie

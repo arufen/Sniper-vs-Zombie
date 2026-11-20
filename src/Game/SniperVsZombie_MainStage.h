@@ -10,6 +10,7 @@
 #include <Game/Component/ComponentCameraPath.h>
 #include <Game/Component/ComponentRadio.h>
 #include "ZombieSpawner.h"
+#include "ScorePopup.h"
 #include "GameResult.h"
 
 namespace SniperVsZombie {
@@ -93,13 +94,17 @@ private:
     bool      endingFadeStarted_ = false;
 
     //SOUNDS - -1 when the file is missing, then they are just silent (RequiredAssets.md)(音。ファイルが無ければ-1で無音)
-    int   bgm_            = -1;
-    int   sfxGateHit_     = -1;
-    int   sfxGateBreak_   = -1;
-    int   sfxZombieGroan_ = -1;
-    int   sfxStalker_     = -1;
-    int   sfxPlayerHurt_  = -1;
-    float groanCooldown_  = 0.0f;    //time until the next groan is allowed(次のうめき声までの時間)
+    int bgm_            = -1;
+    int sfxGateHit_     = -1;
+    int sfxGateBreak_   = -1;
+    int sfxZombieGroan_ = -1;
+    int sfxStalker_     = -1;
+    int sfxPlayerHurt_  = -1;
+    int sfxKill_        = -1;    //body kill confirm(胴体キルの確認音)
+    int sfxHeadshot_    = -1;    //headshot kill(ヘッドショットキル)
+
+    ScorePopups popups_;                  //"+1" texts floating up from kills(キルから浮かぶ「+1」の文字)
+    float       groanCooldown_ = 0.0f;    //time until the next groan is allowed(次のうめき声までの時間)
 
     ZombieSpawner spawner_;    //all zombie spawning lives here now(ゾンビの出現処理は全部ここ)
 

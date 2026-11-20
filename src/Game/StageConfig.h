@@ -16,6 +16,15 @@ inline const float3 PLAYER_SPAWN_POSITION = {447.147f, 231.806f, 585.323f};
 inline const float3 PLAYER_SPAWN_ROTATION = {0.0f, -180.0f, 0.0f};
 inline const float3 PLAYER_EYE_TO_BODY    = {0.0f, -10.0f, 0.0f};    //hit body sits under the camera eye(当たり判定の体はカメラの目の下)
 
+//SHOT FEEL(撃った時の手応え)
+inline constexpr float RECOIL_PITCH =
+    1.5f;    //degrees the view kicks up per shot. view only, the aim stays(1発で視点が上に跳ねる角度。見た目だけで照準は動かない)
+inline constexpr float RECOIL_RETURN_SPEED = 9.0f;     //how fast the kick goes back, bigger = faster(跳ねが戻る速さ。大きいほど速い)
+inline constexpr float GUN_KICK_DISTANCE   = 1.5f;     //how far the gun model moves back per shot(1発で銃モデルが後ろに下がる距離)
+inline constexpr float POPUP_TIME          = 1.0f;     //seconds a score popup stays(スコア表示が残る秒数)
+inline constexpr float POPUP_RISE          = 45.0f;    //pixels the popup floats up(スコア表示が浮き上がるピクセル数)
+inline constexpr float SFX_KILL_VOLUME     = 0.7f;     //kill confirm / headshot sound(キル確認・ヘッドショット音)
+
 //SHOOTING(射撃)
 inline constexpr float SHOT_INTERVAL         = 1.0f;       //seconds between 2 shots = bolt action time(2発の間の秒数=ボルトを引く時間)
 inline constexpr float SHOT_WALL_CHECK_RANGE = 3000.0f;    //how far a shot looks for a building in its way(弾が進路上の建物を探す距離)

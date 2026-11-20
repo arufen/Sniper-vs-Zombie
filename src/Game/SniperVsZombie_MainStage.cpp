@@ -79,6 +79,8 @@ bool SniperVsZombie_MainStage::Init()
     sfxZombieGroan_ = Sound::Load(Assets::SFX_ZOMBIE_GROAN);
     sfxStalker_     = Sound::Load(Assets::SFX_STALKER_SCREECH);
     sfxPlayerHurt_  = Sound::Load(Assets::SFX_PLAYER_HURT);
+    sfxKill_        = Sound::Load(Assets::SFX_KILL_CONFIRM);
+    sfxHeadshot_    = Sound::Load(Assets::SFX_HEADSHOT);
     Sound::PlayLoop(bgm_, Config::BGM_VOLUME);
 
     //BLACK SCREEN TRANSITION - only for leaving. the opening does its own short fade in(退出用のみ。オープニングが自分で短くフェードインする)
@@ -154,14 +156,15 @@ void SniperVsZombie_MainStage::ResetStageState()
     civilianSaveTime_    = Config::CIVILIAN_SAVE_INTERVAL;
     hitmarkerAlpha_      = 0;
     hitmarkerIsHeadshot_ = false;
-    arrowTimer_          = 0.0f;
-    stageState_          = StageState::Opening;
-    wasLeftMouseDown_    = true;
-    said_                = SaidFlags{};
-    prevPlayerHP_        = -1.0f;
-    endingTimer_         = 0.0f;
-    endingFadeStarted_   = false;
-    groanCooldown_       = 0.0f;
+    popups_.Clear();
+    arrowTimer_        = 0.0f;
+    stageState_        = StageState::Opening;
+    wasLeftMouseDown_  = true;
+    said_              = SaidFlags{};
+    prevPlayerHP_      = -1.0f;
+    endingTimer_       = 0.0f;
+    endingFadeStarted_ = false;
+    groanCooldown_     = 0.0f;
 }
 
 void SniperVsZombie_MainStage::CreateMap()
@@ -187,6 +190,10 @@ void SniperVsZombie_MainStage::OnZombieKilled(const ComponentEnemyDeath::KillInf
     PlayHitEffect(kill.position);
     TriggerHitmark(kill.headshot);
     AddScore(kill.score);
+
+    //SHOT FEEL: floating score + a kill sound, stronger for a headshot(撃った手応え: 浮かぶスコアとキル音。ヘッドショットは強め)
+    popups_.Add(kill.position, kill.score, kill.headshot);
+    Sound::Play(kill.headshot ? sfxHeadshot_ : sfxKill_, Config::SFX_KILL_VOLUME);
 }
 
 void SniperVsZombie_MainStage::PlayHitEffect(const float3& position)
@@ -406,6 +413,8 @@ void SniperVsZombie_MainStage::Update()
 
     //GATE ARROW INDICATOR - tick the bounce timer every frame
     arrowTimer_ += GetDeltaTime();
+
+    popups_.Update(GetDeltaTime());
 }
 
 void SniperVsZombie_MainStage::Exit()
@@ -418,6 +427,8 @@ void SniperVsZombie_MainStage::Exit()
     Sound::Release(sfxZombieGroan_);
     Sound::Release(sfxStalker_);
     Sound::Release(sfxPlayerHurt_);
+    Sound::Release(sfxKill_);
+    Sound::Release(sfxHeadshot_);
     Hud::ReleaseFont();    //free the HUD font, it is made again next time it is needed(HUDフォントを解放。次に必要な時に作り直される)
 }
 
@@ -540,6 +551,9 @@ void SniperVsZombie_MainStage::PostDraw()
     if(stageState_ == StageState::Playing) {
         for(const float3& pos : spawner_.GetLivingPositions(ZombieType::Stalker)) Hud::DrawThreatIndicator(pos, arrowTimer_);
     }
+
+    //SCORE POPUPS at the kill spots(キル地点のスコア表示)
+    popups_.Draw();
 
     //PLAYER HP UI + red hit flash(プレイヤーHP表示と被弾の赤フラッシュ)
     if(auto stats = playerStats_.lock())

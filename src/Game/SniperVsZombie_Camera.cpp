@@ -17,6 +17,8 @@ namespace SniperVsZombie {
 
 namespace {
 
+const float3 GUN_REST_POSITION = {3.57f, -1.17f, 9.33f};    //gun model offset from the eye when it is not kicking(反動していない時の、目からの銃モデルの位置)
+
 //distance from start to the nearest building or ground along dir. FLT_MAX = nothing in the way(startからdir方向で一番近い建物か地面までの距離。FLT_MAX=何もない)
 //one line check per shot, against the models that already have collision info (ComponentCollisionModel::AttachToModel)(1発につき1回の線判定。当たり情報を持つモデルに対して)
 float FindWallDistance(const float3& start, const float3& dir)
@@ -59,7 +61,7 @@ bool Camera::Init()
 
     //Gun Model
     auto gunModel = AddComponent<ComponentModel>("data/Game/Models/Player/Gun.mv1");
-    gunModel->SetTranslate({3.57f, -1.17f, 9.33f});
+    gunModel->SetTranslate(GUN_REST_POSITION);
     gunModel->SetRotationAxisXYZ({0.0f, -90.0f, 0.0f});
     gunModel->SetScaleAxisXYZ({0.03f, 0.03f, 0.03f});
 
@@ -89,6 +91,10 @@ void Camera::Shoot()
 
     //SFX - DX_PLAYTYPE_BACK plays it without blocking, and lets overlapping shots layer instead of cutting off
     PlaySoundMem(shootSoundHandle_, DX_PLAYTYPE_BACK);
+
+    //SHOT FEEL: view kicks up, gun slides back. both spring back by themselves(撃った手応え: 視点が跳ね、銃が下がる。どちらも自動で戻る)
+    controller->AddRecoil(Config::RECOIL_PITCH, Config::RECOIL_RETURN_SPEED);
+    gun_kick_ = 1.0f;
 }
 
 void Camera::Update()
@@ -109,6 +115,11 @@ void Camera::Update()
             }
         }
     }
+
+    //GUN KICK: 1 = fully back, goes to 0 with the same speed as the view recoil(銃の反動: 1=一番後ろ、視点のリコイルと同じ速さで0へ)
+    gun_kick_ *= expf(-Config::RECOIL_RETURN_SPEED * GetDeltaTime());
+    if(auto gun = GetComponent<ComponentModel>())
+        gun->SetTranslate(GUN_REST_POSITION - float3{0.0f, 0.0f, Config::GUN_KICK_DISTANCE * gun_kick_});
 }
 
 float Camera::GetReloadRatio() const
