@@ -16,6 +16,7 @@
 #include "SniperVsZombie_Gate.h"
 #include "SniperVsZombie_GameOver.h"
 #include "HudText.h"
+#include "ThreatIndicator.h"
 #include "StoryText.h"
 #include "SoundUtil.h"
 #include "AssetPaths.h"
@@ -517,6 +518,11 @@ void SniperVsZombie_MainStage::PostDraw()
 
             DrawRotaGraphF(x, y, scale, 0.0f, arrowHandle_, TRUE);
         }
+    }
+
+    //STALKER WARNING: red arrow on it, or at the screen edge when it is off screen(ストーカー警告: 敵の上、または画面外なら画面端に赤い矢印)
+    if(stageState_ == StageState::Playing) {
+        for(const float3& pos : spawner_.GetLivingPositions(ZombieType::Stalker)) Hud::DrawThreatIndicator(pos, arrowTimer_);
     }
 
     //PLAYER HP UI + red hit flash(プレイヤーHP表示と被弾の赤フラッシュ)

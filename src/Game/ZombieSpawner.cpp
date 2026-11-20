@@ -134,6 +134,23 @@ int ZombieSpawner::GetAliveCount(ZombieType type) const
     return count;
 }
 
+std::vector<float3> ZombieSpawner::GetLivingPositions(ZombieType type) const
+{
+    std::vector<float3> positions;
+    for(const auto& z : zombies_) {
+        if(z.type != type)
+            continue;
+        auto obj = z.object.lock();
+        if(!obj || !obj->GetStatus(Object::StatusBit::Alive))
+            continue;
+        //a dead body is still Alive until its corpse time ends, so ask the death component too(死体は死体時間が終わるまでAliveのままなので、死亡コンポーネントにも聞く)
+        if(auto death = obj->GetComponent<ComponentEnemyDeath>(); death && death->IsDead())
+            continue;
+        positions.push_back(obj->GetTranslate());
+    }
+    return positions;
+}
+
 void ZombieSpawner::ForgetRemovedZombies()
 {
     //Scene::Object::Release() turns Alive off, so that is "gone" for us too(Release()でAliveがOFFになる。それを「消えた」とみなす)

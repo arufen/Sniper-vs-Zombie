@@ -47,6 +47,9 @@ public:
     int GetAliveCount() const;
     int GetAliveCount(ZombieType type) const;
 
+    //feet positions of the zombies of this type that are still alive. dead bodies are skipped. e.g. for HUD warnings(まだ生きているこの種類のゾンビの足元の位置。死体は除く。HUDの警告用など)
+    std::vector<float3> GetLivingPositions(ZombieType type) const;
+
     float GetNormalSpawnInterval() const { return normal_spawn_interval_; }
 
 private:
