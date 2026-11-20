@@ -11,7 +11,6 @@ namespace SniperVsZombie::Assets {
 inline constexpr const char* SFX_RADIO_BEEP      = "data/Game/Audio/sfx_radio_beep.mp3";
 inline constexpr const char* SFX_GATE_HIT        = "data/Game/Audio/sfx_gate_hit.mp3";
 inline constexpr const char* SFX_GATE_BREAK      = "data/Game/Audio/sfx_gate_break.mp3";
-inline constexpr const char* SFX_ZOMBIE_GROAN    = "data/Game/Audio/sfx_zombie_groan.mp3";
 inline constexpr const char* SFX_STALKER_SCREECH = "data/Game/Audio/sfx_stalker_screech.mp3";
 inline constexpr const char* SFX_HELI_ROTOR_LOOP = "data/Game/Audio/sfx_heli_rotor_loop.mp3";
 inline constexpr const char* SFX_PLAYER_HURT     = "data/Game/Audio/sfx_player_hurt.mp3";

@@ -81,14 +81,13 @@ bool SniperVsZombie_MainStage::Init()
     hitEffectHandle_ = LoadEffekseerEffect("data/Sample/Effects/hit_eff.efkefc");
 
     //SOUNDS - silent until the files exist (RequiredAssets.md)(ファイルができるまで無音)
-    bgm_            = Sound::Load(Assets::BGM_STAGE);
-    sfxGateHit_     = Sound::Load(Assets::SFX_GATE_HIT);
-    sfxGateBreak_   = Sound::Load(Assets::SFX_GATE_BREAK);
-    sfxZombieGroan_ = Sound::Load(Assets::SFX_ZOMBIE_GROAN);
-    sfxStalker_     = Sound::Load(Assets::SFX_STALKER_SCREECH);
-    sfxPlayerHurt_  = Sound::Load(Assets::SFX_PLAYER_HURT);
-    sfxKill_        = Sound::Load(Assets::SFX_KILL_CONFIRM);
-    sfxHeadshot_    = Sound::Load(Assets::SFX_HEADSHOT);
+    bgm_           = Sound::Load(Assets::BGM_STAGE);
+    sfxGateHit_    = Sound::Load(Assets::SFX_GATE_HIT);
+    sfxGateBreak_  = Sound::Load(Assets::SFX_GATE_BREAK);
+    sfxStalker_    = Sound::Load(Assets::SFX_STALKER_SCREECH);
+    sfxPlayerHurt_ = Sound::Load(Assets::SFX_PLAYER_HURT);
+    sfxKill_       = Sound::Load(Assets::SFX_KILL_CONFIRM);
+    sfxHeadshot_   = Sound::Load(Assets::SFX_HEADSHOT);
     Sound::PlayBgm(bgm_, Config::BGM_VOLUME);
 
     //BLACK SCREEN TRANSITION - only for leaving. the opening does its own short fade in(退出用のみ。オープニングが自分で短くフェードインする)
@@ -186,7 +185,6 @@ void SniperVsZombie_MainStage::ResetStageState()
     prevPlayerHP_      = -1.0f;
     endingTimer_       = 0.0f;
     endingFadeStarted_ = false;
-    groanCooldown_     = 0.0f;
 }
 
 void SniperVsZombie_MainStage::CreateMap()
@@ -289,14 +287,9 @@ void SniperVsZombie_MainStage::OnGateDamaged(float hp, float max_hp)
 
 void SniperVsZombie_MainStage::OnZombieSpawned(ZombieType type)
 {
-    //SOUND: every stalker screeches, normal zombies groan with a cooldown(音: ストーカーは毎回叫ぶ。通常ゾンビはクールダウン付きでうめく)
-    if(type == ZombieType::Stalker) {
+    //SOUND: every stalker screeches. normal zombies are silent (the groan felt weird, removed 2026-11-20)(音: ストーカーは毎回叫ぶ。通常ゾンビは無音。うめき声は不自然だったので削除)
+    if(type == ZombieType::Stalker)
         Sound::Play(sfxStalker_, Config::SFX_ZOMBIE_VOLUME);
-    }
-    else if(groanCooldown_ <= 0.0f) {
-        Sound::Play(sfxZombieGroan_, Config::SFX_ZOMBIE_VOLUME);
-        groanCooldown_ = Config::ZOMBIE_GROAN_COOLDOWN;
-    }
 
     if(type == ZombieType::Stalker && !said_.stalker) {
         said_.stalker = true;
@@ -508,9 +501,6 @@ void SniperVsZombie_MainStage::Update()
     if(!isGameOver_)
         playTime_ += GetDeltaTime();
 
-    if(groanCooldown_ > 0.0f)
-        groanCooldown_ -= GetDeltaTime();
-
     //ENDING - wait, then fade to GameOver(終了。待ってからGameOverへフェード)
     if(stageState_ == StageState::Ending)
         UpdateEnding();
@@ -550,7 +540,6 @@ void SniperVsZombie_MainStage::Exit()
     Sound::Release(bgm_);
     Sound::Release(sfxGateHit_);
     Sound::Release(sfxGateBreak_);
-    Sound::Release(sfxZombieGroan_);
     Sound::Release(sfxStalker_);
     Sound::Release(sfxPlayerHurt_);
     Sound::Release(sfxKill_);

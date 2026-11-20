@@ -206,11 +206,10 @@ inline constexpr float RESULT_DELAY =
 //---------------------------------------------------------------------------
 // AUDIO VOLUMES 0.0 - 1.0(音量)
 //---------------------------------------------------------------------------
-inline constexpr float BGM_VOLUME            = 0.5f;
-inline constexpr float SFX_GATE_VOLUME       = 0.8f;
-inline constexpr float SFX_ZOMBIE_VOLUME     = 0.6f;
-inline constexpr float SFX_HELI_VOLUME       = 0.7f;
-inline constexpr float SFX_HURT_VOLUME       = 0.8f;
-inline constexpr float ZOMBIE_GROAN_COOLDOWN = 3.0f;    //min seconds between 2 groans, 20 zombies would be noise(うめき声の最短間隔・秒。20体だと騒音になる)
+inline constexpr float BGM_VOLUME        = 0.5f;
+inline constexpr float SFX_GATE_VOLUME   = 0.8f;
+inline constexpr float SFX_ZOMBIE_VOLUME = 0.6f;
+inline constexpr float SFX_HELI_VOLUME   = 0.7f;
+inline constexpr float SFX_HURT_VOLUME   = 0.8f;
 
 }    // namespace SniperVsZombie::Config
