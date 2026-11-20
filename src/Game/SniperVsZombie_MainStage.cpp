@@ -60,6 +60,12 @@ bool SniperVsZombie_MainStage::Init()
     spawner_.SetOnZombieKilled([this](const ComponentEnemyDeath::KillInfo& kill) { OnZombieKilled(kill); });
     spawner_.SetOnZombieSpawned([this](ZombieType type) { OnZombieSpawned(type); });
 
+    //PHASES - phase 2 is announced by the first stalker's radio line, the final phase gets its own(フェーズ。2はストーカーの無線が知らせる。最終フェーズは専用の無線)
+    spawner_.SetOnPhaseChanged([this](int phase) {
+        if(phase == static_cast<int>(Config::SPAWN_PHASES.size()) - 1 && !isGameOver_)
+            radio_->Say(Story::RADIO_FINAL_WAVE);
+    });
+
     //RADIO(無線)
     radio_ = CreateRadio();
 

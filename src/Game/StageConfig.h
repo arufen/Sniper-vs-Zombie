@@ -55,20 +55,33 @@ inline constexpr float CIVILIAN_SAVE_INTERVAL = 5.0f;    //seconds per saved civ
 //---------------------------------------------------------------------------
 // ZOMBIE SPAWNING(ゾンビの出現)
 //---------------------------------------------------------------------------
-inline constexpr int MAX_ENEMIES  = 20;    //max zombies alive at once, all types(全種類合わせた同時生存数の上限)
-inline constexpr int MAX_STALKERS = 2;     //max stalkers alive at once, also counted in MAX_ENEMIES(ストーカーの同時上限。MAX_ENEMIESにも含む)
+inline constexpr int MAX_ENEMIES = 20;    //max zombies alive at once, all types(全種類合わせた同時生存数の上限)
 
-//normal zombie spawn interval goes from START (stage begin) to END (all civilians saved)(通常ゾンビの出現間隔。開始時STARTから全員救出時ENDへ)
-inline constexpr float NORMAL_SPAWN_INTERVAL_START = 5.0f;
-inline constexpr float NORMAL_SPAWN_INTERVAL_END   = 1.0f;
-inline constexpr float NORMAL_SPEED_MIN            = 0.1f;
-inline constexpr float NORMAL_SPEED_MAX            = 0.3f;
+//the stage is split into 3 phases by stage progress (civilians saved / total). 36 civilians x 5s = about 60s per phase(ステージは進行度(救出数/総数)で3フェーズに分かれる。36人×5秒=1フェーズ約60秒)
+//1 = WARM-UP: slow zombies, time to learn aiming(1=準備: 遅いゾンビ、狙いを覚える時間)
+//2 = ESCALATION: stalkers start, more zombies(2=激化: ストーカー登場、ゾンビ増加)
+//3 = FINAL DEFENSE: the big push before the last civilians are out(3=最終防衛: 最後の市民が出るまでの大攻勢)
+struct SpawnPhase
+{
+    float start;                    //stage progress 0..1 when this phase begins(このフェーズが始まる進行度0〜1)
+    float normal_interval_start;    //seconds between normal zombies at the phase start(フェーズ開始時の通常ゾンビ出現間隔・秒)
+    float normal_interval_end;      //... and at the phase end, it slides in between(フェーズ終了時の間隔。間はなめらかに変わる)
+    float normal_speed_min;         //walk speed range of normal zombies(通常ゾンビの歩く速さの範囲)
+    float normal_speed_max;
+    float stalker_interval;    //seconds between stalkers, 0 = no stalkers(ストーカーの出現間隔・秒。0=出ない)
+    int   max_stalkers;        //stalkers alive at once, also counted in MAX_ENEMIES(ストーカーの同時上限。MAX_ENEMIESにも含む)
+};
+inline const std::vector<SpawnPhase> SPAWN_PHASES = {
+    //start  interval      speed        stalker
+    {       0.0f, 5.0f, 3.5f, 0.10f, 0.20f,  0.0f, 0}, //1 WARM-UP(準備)
+    {1.0f / 3.0f, 3.5f, 2.0f, 0.15f, 0.25f, 14.0f, 1}, //2 ESCALATION(激化)
+    {2.0f / 3.0f, 2.0f, 1.2f, 0.20f, 0.30f, 10.0f, 2}, //3 FINAL DEFENSE(最終防衛)
+};
+inline constexpr float PHASE_BREATHER =
+    4.0f;    //seconds with no new normal zombie when a phase starts, so the player notices the change(フェーズ開始時に通常ゾンビが出ない秒数。変化に気づけるように)
 
-inline constexpr float STALKER_PHASE_START =
-    0.5f;    //stage progress (0..1) when stalkers start. 0.5 = half the civilians(ストーカーが出始める進行度。0.5=市民の半分)
-inline constexpr float STALKER_SPAWN_INTERVAL = 12.0f;    //seconds between stalkers(ストーカーの出現間隔・秒)
-inline constexpr float STALKER_SPEED_MIN      = 0.3f;     //a bit faster than normal zombies(通常ゾンビより少し速い)
-inline constexpr float STALKER_SPEED_MAX      = 0.4f;
+inline constexpr float STALKER_SPEED_MIN = 0.3f;    //a bit faster than normal zombies(通常ゾンビより少し速い)
+inline constexpr float STALKER_SPEED_MAX = 0.4f;
 
 //---------------------------------------------------------------------------
 // LANES(レーン)

@@ -41,6 +41,7 @@ inline constexpr const char* RADIO_GATE_LOW       = "ゲートが持たない！
 inline constexpr const char* RADIO_STALKER        = "屋上に動きあり！狙撃位置に注意しろ！";      //EN: Movement on the rooftops! Watch your position!
 inline constexpr const char* RADIO_CIVILIAN_HALF  = "市民の半分が脱出した。持ちこたえろ。";      //EN: Half the civilians are out. Keep holding.
 inline constexpr const char* RADIO_CIVILIAN_ALMOST = "あと少しで全員だ。もう少しだけ耐えろ！";    //EN: Almost everyone is out. Just a little longer!
+inline constexpr const char* RADIO_FINAL_WAVE      = "大群が来るぞ！最後まで持ちこたえろ！";      //EN: A big horde is coming! Hold on to the end!
 inline constexpr const char* RADIO_PLAYER_HIT      = "攻撃を受けている！近くの敵を排除しろ！";    //EN: You're under attack! Take out the enemy near you!
 inline constexpr const char* RADIO_PLAYER_LOW      = "狙撃手、負傷がひどい！耐えてくれ！";        //EN: Sniper, you're badly hurt! Hang in there!
 

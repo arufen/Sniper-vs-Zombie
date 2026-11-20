@@ -52,6 +52,13 @@ public:
 
     float GetNormalSpawnInterval() const { return normal_spawn_interval_; }
 
+    //0, 1, 2 = index in Config::SPAWN_PHASES(Config::SPAWN_PHASESの番号)
+    int GetPhase() const { return phase_; }
+
+    //called once when a new phase starts (not for phase 0), e.g. for a radio line(新しいフェーズが始まった時に1回呼ばれる(0は除く)。無線など)
+    using OnPhaseFunc = std::function<void(int phase)>;
+    void SetOnPhaseChanged(OnPhaseFunc on_phase) { on_phase_changed_ = on_phase; }
+
 private:
     //forget zombies that were removed from the scene(シーンから消えたゾンビを忘れる)
     void ForgetRemovedZombies();
@@ -67,10 +74,15 @@ private:
 
     float normal_spawn_interval_ = 0.0f;    //current interval, shrinks as the stage goes on(今の出現間隔。進行で短くなる)
     float normal_spawn_timer_    = 0.0f;    //time until the next normal zombie(次の通常ゾンビまでの時間)
-    float stalker_spawn_timer_   = 0.0f;    //time until the next stalker in phase 2(フェーズ2で次のストーカーまでの時間)
+    float stalker_spawn_timer_   = 0.0f;    //time until the next stalker(次のストーカーまでの時間)
+    int   phase_                 = 0;       //current index in Config::SPAWN_PHASES(今のConfig::SPAWN_PHASESの番号)
+
+    //which phase this progress belongs to(この進行度がどのフェーズか)
+    static int FindPhase(float progress);
 
     OnKilledFunc  on_zombie_killed_;
     OnSpawnedFunc on_zombie_spawned_;
+    OnPhaseFunc   on_phase_changed_;
 };
 
 }    // namespace SniperVsZombie
