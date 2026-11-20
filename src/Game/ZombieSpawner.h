@@ -47,7 +47,21 @@ public:
     int GetAliveCount() const;
     int GetAliveCount(ZombieType type) const;
 
+    //feet positions of the zombies of this type that are still alive. dead bodies are skipped. e.g. for HUD warnings(まだ生きているこの種類のゾンビの足元の位置。死体は除く。HUDの警告用など)
+    std::vector<float3> GetLivingPositions(ZombieType type) const;
+
     float GetNormalSpawnInterval() const { return normal_spawn_interval_; }
+
+    //0, 1, 2 = index in Config::SPAWN_PHASES(Config::SPAWN_PHASESの番号)
+    int GetPhase() const { return phase_; }
+
+    //F9 hitbox view: draw every zombie capsule in game, also for zombies spawned later(F9の当たり判定表示: 全ゾンビのカプセルをゲーム中に描く。後から出るゾンビも)
+    void SetShowHitboxes(bool show);
+    bool IsShowingHitboxes() const { return show_hitboxes_; }
+
+    //called once when a new phase starts (not for phase 0), e.g. for a radio line(新しいフェーズが始まった時に1回呼ばれる(0は除く)。無線など)
+    using OnPhaseFunc = std::function<void(int phase)>;
+    void SetOnPhaseChanged(OnPhaseFunc on_phase) { on_phase_changed_ = on_phase; }
 
 private:
     //forget zombies that were removed from the scene(シーンから消えたゾンビを忘れる)
@@ -64,10 +78,19 @@ private:
 
     float normal_spawn_interval_ = 0.0f;    //current interval, shrinks as the stage goes on(今の出現間隔。進行で短くなる)
     float normal_spawn_timer_    = 0.0f;    //time until the next normal zombie(次の通常ゾンビまでの時間)
-    float stalker_spawn_timer_   = 0.0f;    //time until the next stalker in phase 2(フェーズ2で次のストーカーまでの時間)
+    float stalker_spawn_timer_   = 0.0f;    //time until the next stalker(次のストーカーまでの時間)
+    int   phase_                 = 0;
+    bool  show_hitboxes_         = false;    //F9 view(F9表示)
+
+    //turn ShowInGame on/off for every collision of one zombie(1体のゾンビの全コリジョンの表示を切り替え)
+    static void ApplyShowHitboxes(Object& zombie, bool show);    //current index in Config::SPAWN_PHASES(今のConfig::SPAWN_PHASESの番号)
+
+    //which phase this progress belongs to(この進行度がどのフェーズか)
+    static int FindPhase(float progress);
 
     OnKilledFunc  on_zombie_killed_;
     OnSpawnedFunc on_zombie_spawned_;
+    OnPhaseFunc   on_phase_changed_;
 };
 
 }    // namespace SniperVsZombie

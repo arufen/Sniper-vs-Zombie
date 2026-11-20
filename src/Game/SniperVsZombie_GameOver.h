@@ -24,11 +24,12 @@ public:
     BP_CLASS_DECL(SniperVsZombie_GameOver, u8"Game Over");
 
     //! @brief called by MainStage right before Scene::Change, so this scene knows how it ended(MainStageがScene::Change直前に呼ぶ。どう終わったかを知るため)
-    void SetResult(GameResult result, int finalScore)
+    void SetResult(GameResult result, const StageStats& stats)
     {
         result_     = result;
         isWin_      = result == GameResult::Win;
-        finalScore_ = finalScore;
+        stats_      = stats;
+        finalScore_ = stats.score;
     }
 
     //! @brief 初期化
@@ -66,6 +67,10 @@ private:
     GameResult result_     = GameResult::Win;    //which ending to play(どのエンディングを再生するか)
     bool       isWin_      = true;               //!< true = all civilians saved, false = gate destroyed / sniper down
     int        finalScore_ = 0;                  //!< score carried over from MainStage
+    StageStats stats_;                           //kills, accuracy... for the result screen(キル数・命中率など。結果画面用)
+
+    //the stats table under the result title(結果タイトルの下の数値表)
+    void DrawStats();
 
     //SOUNDS - -1 when the file is missing (RequiredAssets.md)(音。ファイルが無ければ-1)
     int bgm_          = -1;

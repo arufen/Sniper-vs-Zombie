@@ -42,6 +42,12 @@ public:
     //set the look direction in degrees, e.g. where the player faces when control starts(視線の向きを度で設定。操作開始時に向く方向など)
     ComponentFPSCameraControllerPtr SetLookAngles(float yaw_deg, float pitch_deg);
 
+    //kick the VIEW up by pitch_deg, it springs back by itself. the aim (GetForwardVector) does not move(視点を上に跳ねさせる。自動で戻る。照準(GetForwardVector)は動かない)
+    void AddRecoil(float pitch_deg, float return_speed);
+
+    //the game froze this component (pause menu): true = give the cursor back, false = forget mouse moves made during the pause(ゲームがこのコンポーネントを止めた(ポーズ): true=カーソルを返す、false=ポーズ中のマウス移動を忘れる)
+    void OnGamePaused(bool paused);
+
     void GUI() override;
 
 private:
@@ -54,6 +60,9 @@ private:
 
     float rotate_v_ = 0.0f;    //!< 上下回転(ラジアン)
     float rotate_h_ = 0.0f;    //!< 左右回転(ラジアン)
+
+    float recoil_pitch_  = 0.0f;    //view-only kick up, radians, goes back to 0(見た目だけの上への跳ね・ラジアン。0に戻る)
+    float recoil_return_ = 9.0f;    //how fast recoil_pitch_ goes back(recoil_pitch_が戻る速さ)
 
     float mouse_sensitivity_ = DEFAULT_MOUSE_SENSITIVITY_;    //!< マウス感度
     float sensitivity_scale_ = 1.0f;                          //settings menu multiplier(設定メニューの倍率)

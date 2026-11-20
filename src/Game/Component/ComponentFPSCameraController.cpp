@@ -70,10 +70,14 @@ void ComponentFPSCameraController::Update()
     // 左右振り向き角度と上下角度で指定
     //----------------------------------------------------------
 
+    //RECOIL: shrink the kick a bit every frame (exp = same feel at any frame rate)(リコイル: 毎フレーム跳ねを少し戻す。expなのでフレームレートに関係なく同じ感じ)
+    recoil_pitch_ *= expf(-recoil_return_ * GetDeltaTime());
+
     // カメラのワールド行列
     matrix mat_camera = matrix::identity();
     {
-        mat_camera = mul(mat_camera, matrix::rotateX(rotate_v_));
+        //view pitch = aim pitch minus the kick (minus = up, because + is looking down)(視点の上下=照準から跳ねを引く。+が下向きなので、引く=上)
+        mat_camera = mul(mat_camera, matrix::rotateX(rotate_v_ - recoil_pitch_));
         mat_camera = mul(mat_camera, matrix::rotateY(rotate_h_));
         mat_camera = mul(mat_camera, matrix::translate(eye_position_ + owner->GetTranslate()));
     }
@@ -164,6 +168,22 @@ ComponentFPSCameraControllerPtr ComponentFPSCameraController::SetLookAngles(floa
     rotate_h_ = yaw_deg * DegToRad;
     rotate_v_ = std::clamp(pitch_deg * DegToRad, limit_pitch_min_, limit_pitch_max_);    //same limit as the mouse(マウスと同じ制限)
     return std::dynamic_pointer_cast<ComponentFPSCameraController>(shared_from_this());
+}
+
+void ComponentFPSCameraController::OnGamePaused(bool paused)
+{
+    if(paused) {
+        ApplyCursor(false);    //show the cursor for the menu. Update turns it back off after the pause(メニュー用にカーソルを出す。ポーズ後はUpdateが元に戻す)
+        return;
+    }
+    //start counting from where the cursor is NOW, or the view jumps by everything moved during the pause(今のカーソル位置から数え直す。でないとポーズ中の移動分だけ視点が飛ぶ)
+    GetMousePoint(&mouse_prev_x_, &mouse_prev_y_);
+}
+
+void ComponentFPSCameraController::AddRecoil(float pitch_deg, float return_speed)
+{
+    recoil_pitch_  += pitch_deg * DegToRad;
+    recoil_return_  = return_speed;
 }
 
 ComponentFPSCameraControllerPtr ComponentFPSCameraController::SetEyePosition(float3 pos)

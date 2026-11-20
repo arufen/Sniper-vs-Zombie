@@ -41,6 +41,7 @@ inline constexpr const char* RADIO_GATE_LOW       = "ゲートが持たない！
 inline constexpr const char* RADIO_STALKER        = "屋上に動きあり！狙撃位置に注意しろ！";      //EN: Movement on the rooftops! Watch your position!
 inline constexpr const char* RADIO_CIVILIAN_HALF  = "市民の半分が脱出した。持ちこたえろ。";      //EN: Half the civilians are out. Keep holding.
 inline constexpr const char* RADIO_CIVILIAN_ALMOST = "あと少しで全員だ。もう少しだけ耐えろ！";    //EN: Almost everyone is out. Just a little longer!
+inline constexpr const char* RADIO_FINAL_WAVE      = "大群が来るぞ！最後まで持ちこたえろ！";      //EN: A big horde is coming! Hold on to the end!
 inline constexpr const char* RADIO_PLAYER_HIT      = "攻撃を受けている！近くの敵を排除しろ！";    //EN: You're under attack! Take out the enemy near you!
 inline constexpr const char* RADIO_PLAYER_LOW      = "狙撃手、負傷がひどい！耐えてくれ！";        //EN: Sniper, you're badly hurt! Hang in there!
 
@@ -64,6 +65,13 @@ inline constexpr const char* RESULT_WIN_JP    = "救出作戦完了";    //EN: R
 inline constexpr const char* RESULT_LOSE_EN   = "Rescue failed";
 inline constexpr const char* RESULT_GATE_JP   = "ゲートが突破された";    //EN: The gate was breached
 inline constexpr const char* RESULT_SNIPER_JP = "狙撃手がやられた";      //EN: The sniper was killed
-inline constexpr const char* RESULT_SCORE     = "スコア: %d";            //EN: Score: %d
+//result stats table: label on the left, number on the right(結果の数値表: 左に名前、右に数値)
+inline constexpr const char* RESULT_STAT_SCORE     = "スコア";              //EN: Score
+inline constexpr const char* RESULT_STAT_CIVILIANS = "救出した市民";        //EN: Civilians saved
+inline constexpr const char* RESULT_STAT_KILLS     = "倒したゾンビ";        //EN: Zombies killed
+inline constexpr const char* RESULT_STAT_HEADSHOT  = "ヘッドショット率";    //EN: Headshot rate
+inline constexpr const char* RESULT_STAT_ACCURACY  = "命中率";              //EN: Accuracy
+inline constexpr const char* RESULT_STAT_GATE      = "ゲート耐久";          //EN: Gate strength left
+inline constexpr const char* RESULT_STAT_TIME      = "プレイ時間";          //EN: Play time
 
 }    // namespace SniperVsZombie::Story

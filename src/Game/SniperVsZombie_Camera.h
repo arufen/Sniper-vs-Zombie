@@ -4,6 +4,7 @@
 //---------------------------------------------------------------------------
 #pragma once
 #include <System/Scene.h>
+#include "StageConfig.h"
 
 namespace SniperVsZombie {
 USING_PTR(Camera);
@@ -20,9 +21,22 @@ public:
     void Update() override;
     void Exit() override;
 
+    //1.0 = just fired, 0.0 = ready to shoot. for the reload bar(1.0=撃った直後、0.0=撃てる。装填バー用)
+    float GetReloadRatio() const;
+
+    //no shot for at least this long, e.g. so the click on RESUME does not fire(最低この時間は撃てない。再開ボタンのクリックで撃たないように)
+    void DelayNextShot(float seconds);
+
+    //bullets fired since the stage started, for the accuracy(ステージ開始からの発射数。命中率用)
+    int GetShotsFired() const { return shots_fired_; }
+
 private:
-    float shootIntervalTime = 1.0f;
+    float shootIntervalTime = Config::SHOT_INTERVAL;    //from StageConfig.h(StageConfig.hから)
     float shootCurrentTime  = shootIntervalTime;
+
+    int shots_fired_ = 0;    //for the result screen(結果画面用)
+
+    float gun_kick_ = 0.0f;    //1 = gun fully pushed back by the shot, 0 = at rest(1=撃った反動で銃が一番後ろ、0=元の位置)
 
     int shootSoundHandle_ = -1;    //!< sniper shot SFX, loaded in Init()
 };

@@ -1,4 +1,5 @@
 ﻿#include <Game/Component/ComponentEnemyDeath.h>
+#include <Game/SniperVsZombie_Bullet.h>
 
 void ComponentEnemyDeath::Init()
 {
@@ -57,6 +58,10 @@ void ComponentEnemyDeath::OnBulletHit(const ComponentCollision::HitInfo& hit_inf
 {
     //already dead, the corpse does not count again(もう死んでいる。死体は二重にカウントしない)
     if(is_dead_)
+        return;
+
+    //we are behind a building from the shooter's view: the wall took the bullet(撃った側から見て建物の向こうにいる: 弾は壁に当たった)
+    if(auto bullet = dynamic_cast<const SniperVsZombie::Bullet*>(hit_info.hit_collision_->GetOwner()); bullet && !bullet->CanReach(GetOwner()->GetTranslate()))
         return;
 
     //collision_ is OUR capsule that got hit. if it is the head capsule, it is a headshot(collision_は被弾した自分のカプセル。頭のカプセルならヘッドショット)

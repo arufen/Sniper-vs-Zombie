@@ -10,6 +10,8 @@
 #include <Game/Component/ComponentCameraPath.h>
 #include <Game/Component/ComponentRadio.h>
 #include "ZombieSpawner.h"
+#include "ScorePopup.h"
+#include "PauseMenu.h"
 #include "GameResult.h"
 
 namespace SniperVsZombie {
@@ -70,6 +72,16 @@ private:
     void OnGameOver(GameResult result);
     void UpdateEnding();
 
+    //everything the result screen shows, as it is right now(結果画面に出す全ての数値。今の値)
+    StageStats CollectStats() const;
+
+    //PAUSE: freeze every object except the menu + fader, and show the menu(ポーズ: メニューとフェード以外の全Objectを止め、メニューを出す)
+    void SetPaused(bool paused);
+    //RESTART / MENU from the pause menu: fade out, then change scene(ポーズメニューからやり直し/メニュー: フェード後にシーン変更)
+    void LeaveFromPause(bool restart);
+    //a slider in the pause menu moved: apply it right away(ポーズメニューのスライダーが動いた: すぐ反映)
+    void OnSettingChanged(SettingsSliders::Kind kind, float value);
+
     //STORY BEATS - radio lines when something happens for the first time(ストーリーの節目。初めて何かが起きた時の無線)
     void OnGateDamaged(float hp, float max_hp);
     void OnZombieSpawned(ZombieType type);
@@ -93,13 +105,20 @@ private:
     bool      endingFadeStarted_ = false;
 
     //SOUNDS - -1 when the file is missing, then they are just silent (RequiredAssets.md)(音。ファイルが無ければ-1で無音)
-    int   bgm_            = -1;
-    int   sfxGateHit_     = -1;
-    int   sfxGateBreak_   = -1;
-    int   sfxZombieGroan_ = -1;
-    int   sfxStalker_     = -1;
-    int   sfxPlayerHurt_  = -1;
-    float groanCooldown_  = 0.0f;    //time until the next groan is allowed(次のうめき声までの時間)
+    int bgm_           = -1;
+    int sfxGateHit_    = -1;
+    int sfxGateBreak_  = -1;
+    int sfxStalker_    = -1;
+    int sfxPlayerHurt_ = -1;
+    int sfxKill_       = -1;    //body kill confirm(胴体キルの確認音)
+    int sfxHeadshot_   = -1;    //headshot kill(ヘッドショットキル)
+
+    ScorePopups popups_;
+
+    PauseMenu pauseMenu_;
+    bool      paused_ = false;
+    bool      leaving_ =
+        false;    //RESTART / MENU was pressed, the fade is running(やり直し/メニューが押され、フェード中)                  //"+1" texts floating up from kills(キルから浮かぶ「+1」の文字)
 
     ZombieSpawner spawner_;    //all zombie spawning lives here now(ゾンビの出現処理は全部ここ)
 
@@ -110,6 +129,9 @@ private:
     bool wasLeftMouseDown_ = true;           //for IsClickStarted. true = a held click from the last scene does not count(押しっぱなしのクリックは数えない)
 
     int        score_               = 0;
+    int        kills_               = 0;       //for the result screen(結果画面用)
+    int        headshots_           = 0;       //for the result screen(結果画面用)
+    float      playTime_            = 0.0f;    //seconds of real play, no opening / pause(実際のプレイ秒数。オープニングとポーズ除く)
     float      gateHP_              = 9999.0f;
     float      gateMaxHP_           = 9999.0f;
     bool       isGameOver_          = false;

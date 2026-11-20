@@ -8,6 +8,7 @@
 #include <Game/Component/ComponentBlackScreen.h>
 #include <Game/Component/ComponentButton.h>
 #include <Game/Component/ComponentSlider.h>
+#include "SettingsSliders.h"
 
 namespace SniperVsZombie {
 
@@ -41,7 +42,7 @@ private:
 
     //SETTINGS PANEL(設定パネル)
     bool               settingsOpen_ = false;
-    ComponentSliderPtr sensitivitySlider_;
+    SettingsSliders    settingsSliders_;    //sensitivity + BGM + SFX, shared with the pause menu(感度+BGM+効果音。ポーズメニューと共有)
     ComponentButtonPtr backButton_;
 
     ComponentBlackScreenPtr blackScreen_;    // fade-to-black used when leaving this scene

@@ -16,6 +16,8 @@ const char* SAVE_FILE   = "data/_save/settings.txt";
 
 bool  loaded            = false;
 float mouse_sensitivity = MOUSE_SENSITIVITY_DEFAULT;
+float bgm_volume        = VOLUME_DEFAULT;
+float sfx_volume        = VOLUME_DEFAULT;
 
 //file format: one "key=value" per line, easy to read and edit by hand(形式: 1行に「key=value」。手で読み書きしやすい)
 void LoadOnce()
@@ -36,6 +38,10 @@ void LoadOnce()
         try {
             if(key == "mouse_sensitivity")
                 mouse_sensitivity = std::clamp(std::stof(value), MOUSE_SENSITIVITY_MIN, MOUSE_SENSITIVITY_MAX);
+            else if(key == "bgm_volume")
+                bgm_volume = std::clamp(std::stof(value), VOLUME_MIN, VOLUME_MAX);
+            else if(key == "sfx_volume")
+                sfx_volume = std::clamp(std::stof(value), VOLUME_MIN, VOLUME_MAX);
         }
         catch(...) {
             //broken number in the file: keep the default(ファイルの数字が壊れている: 初期値のまま)
@@ -56,6 +62,30 @@ void SetMouseSensitivity(float value)
     mouse_sensitivity = std::clamp(value, MOUSE_SENSITIVITY_MIN, MOUSE_SENSITIVITY_MAX);
 }
 
+float GetBgmVolume()
+{
+    LoadOnce();
+    return bgm_volume;
+}
+
+void SetBgmVolume(float value)
+{
+    LoadOnce();
+    bgm_volume = std::clamp(value, VOLUME_MIN, VOLUME_MAX);
+}
+
+float GetSfxVolume()
+{
+    LoadOnce();
+    return sfx_volume;
+}
+
+void SetSfxVolume(float value)
+{
+    LoadOnce();
+    sfx_volume = std::clamp(value, VOLUME_MIN, VOLUME_MAX);
+}
+
 void Save()
 {
     LoadOnce();
@@ -67,6 +97,8 @@ void Save()
     if(!file)
         return;    //can't write (read-only folder etc.): the setting still works until the game closes(書けない: ゲーム終了までは設定は有効)
     file << "mouse_sensitivity=" << mouse_sensitivity << "\n";
+    file << "bgm_volume=" << bgm_volume << "\n";
+    file << "sfx_volume=" << sfx_volume << "\n";
 }
 
 }    // namespace SniperVsZombie::Settings
