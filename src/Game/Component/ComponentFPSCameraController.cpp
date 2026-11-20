@@ -170,6 +170,16 @@ ComponentFPSCameraControllerPtr ComponentFPSCameraController::SetLookAngles(floa
     return std::dynamic_pointer_cast<ComponentFPSCameraController>(shared_from_this());
 }
 
+void ComponentFPSCameraController::OnGamePaused(bool paused)
+{
+    if(paused) {
+        ApplyCursor(false);    //show the cursor for the menu. Update turns it back off after the pause(メニュー用にカーソルを出す。ポーズ後はUpdateが元に戻す)
+        return;
+    }
+    //start counting from where the cursor is NOW, or the view jumps by everything moved during the pause(今のカーソル位置から数え直す。でないとポーズ中の移動分だけ視点が飛ぶ)
+    GetMousePoint(&mouse_prev_x_, &mouse_prev_y_);
+}
+
 void ComponentFPSCameraController::AddRecoil(float pitch_deg, float return_speed)
 {
     recoil_pitch_  += pitch_deg * DegToRad;

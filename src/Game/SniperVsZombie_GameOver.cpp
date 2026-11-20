@@ -79,7 +79,7 @@ bool SniperVsZombie_GameOver::Init()
 
     //BGM - win or lose music(勝ち/負けの音楽)
     bgm_ = Sound::Load(isWin_ ? Assets::BGM_WIN : Assets::BGM_LOSE);
-    Sound::PlayLoop(bgm_, Config::BGM_VOLUME);
+    Sound::PlayBgm(bgm_, Config::BGM_VOLUME);
 
     //the result (set by MainStage) picks the ending(MainStageが設定した結果でエンディングを選ぶ)
     switch(result_) {

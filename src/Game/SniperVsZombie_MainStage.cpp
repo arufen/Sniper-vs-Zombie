@@ -17,6 +17,7 @@
 #include "SniperVsZombie_GameOver.h"
 #include "HudText.h"
 #include "ThreatIndicator.h"
+#include "SniperVsZombie_MainMenu.h"
 #include "StoryText.h"
 #include "SoundUtil.h"
 #include "AssetPaths.h"
@@ -81,12 +82,20 @@ bool SniperVsZombie_MainStage::Init()
     sfxPlayerHurt_  = Sound::Load(Assets::SFX_PLAYER_HURT);
     sfxKill_        = Sound::Load(Assets::SFX_KILL_CONFIRM);
     sfxHeadshot_    = Sound::Load(Assets::SFX_HEADSHOT);
-    Sound::PlayLoop(bgm_, Config::BGM_VOLUME);
+    Sound::PlayBgm(bgm_, Config::BGM_VOLUME);
 
     //BLACK SCREEN TRANSITION - only for leaving. the opening does its own short fade in(退出用のみ。オープニングが自分で短くフェードインする)
     auto blackScreenObj = Scene::Object::Create<Object>();
     blackScreenObj->SetName(Names::BLACK_SCREEN);
     blackScreen_ = blackScreenObj->AddComponent<ComponentBlackScreen>();
+
+    //PAUSE MENU - hidden until P / Tab during play(ポーズメニュー。プレイ中にP/Tabを押すまで隠す)
+    pauseMenu_.Create({
+        [this]() { SetPaused(false); },
+        [this]() { LeaveFromPause(true); },
+        [this]() { LeaveFromPause(false); },
+        [this](SettingsSliders::Kind kind, float value) { OnSettingChanged(kind, value); },
+    });
 
     StartOpening();
 
@@ -157,6 +166,8 @@ void SniperVsZombie_MainStage::ResetStageState()
     hitmarkerAlpha_      = 0;
     hitmarkerIsHeadshot_ = false;
     popups_.Clear();
+    paused_            = false;
+    leaving_           = false;
     arrowTimer_        = 0.0f;
     stageState_        = StageState::Opening;
     wasLeftMouseDown_  = true;
@@ -341,6 +352,73 @@ void SniperVsZombie_MainStage::OnGameOver(GameResult result)
     }
 }
 
+void SniperVsZombie_MainStage::SetPaused(bool paused)
+{
+    if(paused_ == paused)
+        return;
+    paused_ = paused;
+
+    auto camera     = playerCamera_.lock();
+    auto controller = camera ? camera->GetComponent<ComponentFPSCameraController>() : nullptr;
+
+    //give the cursor back BEFORE the controller is frozen(コントローラーを止める前にカーソルを返す)
+    if(paused && controller)
+        controller->OnGamePaused(true);
+
+    //IsPause = no Update but still drawn, so the world freezes on screen. the menu and the fader must keep working(IsPause=Updateしないが描画はする。画面上で世界が止まる。メニューとフェードは動かす)
+    const Object* fader = blackScreen_ ? blackScreen_->GetOwner() : nullptr;
+    for(auto& obj : Scene::Object::GetArray<Object>()) {
+        if(!obj || obj.get() == fader || pauseMenu_.Owns(obj.get()))
+            continue;
+        obj->SetStatus(Object::StatusBit::IsPause, paused);
+    }
+
+    pauseMenu_.SetOpen(paused);
+
+    if(!paused) {
+        if(controller)
+            controller->OnGamePaused(false);
+        //the click on RESUME must not also fire the rifle(再開ボタンのクリックで銃を撃たないように)
+        if(auto shooter = std::dynamic_pointer_cast<Camera>(camera))
+            shooter->DelayNextShot(0.25f);
+    }
+}
+
+void SniperVsZombie_MainStage::LeaveFromPause(bool restart)
+{
+    if(leaving_)
+        return;
+    leaving_ = true;
+
+    pauseMenu_.SetOpen(false);    //saves the settings, the world stays frozen during the fade(設定を保存。フェード中も世界は止まったまま)
+    blackScreen_->StartFadeOut([restart]() {
+        if(restart) {
+            //GetScene would hand back THIS running stage (already initialized, so Init would not run again).(GetSceneは今動いているこのステージを返してしまう(初期化済みなのでInitがもう一度走らない))
+            //forget it by name first, then GetScene makes a brand-new stage, like a restart from GameOver(先に名前で手放せば、GetSceneが新しいステージを作る。GameOverからのやり直しと同じ)
+            Scene::ReleaseScene(Scene::GetScene<SniperVsZombie_MainStage>());
+            Scene::Change(Scene::GetScene<SniperVsZombie_MainStage>());
+        }
+        else
+            Scene::Change(Scene::GetScene<SniperVsZombie_MainMenu>());
+    });
+}
+
+void SniperVsZombie_MainStage::OnSettingChanged(SettingsSliders::Kind kind, float value)
+{
+    switch(kind) {
+    case SettingsSliders::Kind::Sensitivity:
+        if(auto camera = playerCamera_.lock())
+            if(auto controller = camera->GetComponent<ComponentFPSCameraController>())
+                controller->SetSensitivityScale(value);
+        break;
+    case SettingsSliders::Kind::Bgm:
+        Sound::PlayBgm(bgm_, Config::BGM_VOLUME);    //same call again = new volume, no restart(同じ呼び出し=音量だけ変わる)
+        break;
+    case SettingsSliders::Kind::Sfx:
+        break;    //read every time a sound plays(音を鳴らすたびに読まれる)
+    }
+}
+
 void SniperVsZombie_MainStage::UpdateEnding()
 {
     endingTimer_ -= GetDeltaTime();
@@ -361,6 +439,12 @@ void SniperVsZombie_MainStage::UpdateEnding()
 void SniperVsZombie_MainStage::Update()
 {
     const bool click_started = IsClickStarted();
+
+    //PAUSE (P / Tab) - only during normal play. while paused nothing below runs, so timers and spawns stop too(ポーズ。通常プレイ中のみ。ポーズ中は以下が動かないので、タイマーや出現も止まる)
+    if(stageState_ == StageState::Playing && !leaving_ && (IsKeyDown(PauseMenu::KEY_1) || IsKeyDown(PauseMenu::KEY_2)))
+        SetPaused(!paused_);
+    if(paused_)
+        return;
 
     //OPENING - nothing moves, a click skips the cutscene(オープニング。何も動かない。クリックでスキップ)
     if(stageState_ == StageState::Opening) {
@@ -569,6 +653,9 @@ void SniperVsZombie_MainStage::PostDraw()
 
     //RADIO subtitles, then the short fade after a skipped opening(無線字幕、その後スキップ後の短いフェード)
     radio_->DrawRadio();
+
+    //PAUSE MENU on top of the HUD(HUDの上にポーズメニュー)
+    pauseMenu_.Draw();
     if(opening_)
         opening_->DrawFade();
 

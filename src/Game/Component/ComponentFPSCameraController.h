@@ -45,6 +45,9 @@ public:
     //kick the VIEW up by pitch_deg, it springs back by itself. the aim (GetForwardVector) does not move(視点を上に跳ねさせる。自動で戻る。照準(GetForwardVector)は動かない)
     void AddRecoil(float pitch_deg, float return_speed);
 
+    //the game froze this component (pause menu): true = give the cursor back, false = forget mouse moves made during the pause(ゲームがこのコンポーネントを止めた(ポーズ): true=カーソルを返す、false=ポーズ中のマウス移動を忘れる)
+    void OnGamePaused(bool paused);
+
     void GUI() override;
 
 private:

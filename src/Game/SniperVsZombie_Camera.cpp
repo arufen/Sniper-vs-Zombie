@@ -87,7 +87,7 @@ void Camera::Shoot()
     bullet->SetStopDistance(FindWallDistance(start, normalize(forward)));    //buildings stop the bullet(建物が弾を止める)
 
     // 音量の設定
-    ChangeVolumeSoundMem(static_cast<int>(255.0f * 50.0f / 100.0f), shootSoundHandle_);
+    ChangeVolumeSoundMem(static_cast<int>(255.0f * 0.5f * Settings::GetSfxVolume()), shootSoundHandle_);    //50% x the SFX setting(50%×効果音設定)
 
     //SFX - DX_PLAYTYPE_BACK plays it without blocking, and lets overlapping shots layer instead of cutting off
     PlaySoundMem(shootSoundHandle_, DX_PLAYTYPE_BACK);
@@ -120,6 +120,11 @@ void Camera::Update()
     gun_kick_ *= expf(-Config::RECOIL_RETURN_SPEED * GetDeltaTime());
     if(auto gun = GetComponent<ComponentModel>())
         gun->SetTranslate(GUN_REST_POSITION - float3{0.0f, 0.0f, Config::GUN_KICK_DISTANCE * gun_kick_});
+}
+
+void Camera::DelayNextShot(float seconds)
+{
+    shootCurrentTime = std::max(shootCurrentTime, seconds);
 }
 
 float Camera::GetReloadRatio() const

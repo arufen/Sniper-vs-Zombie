@@ -3,6 +3,7 @@
 //! @brief	safe sound helpers(安全なサウンド関数)
 //---------------------------------------------------------------------------
 #include "SoundUtil.h"
+#include "GameSettings.h"
 #include <System/Scene.h>
 #include <algorithm>
 #include <filesystem>
@@ -33,7 +34,7 @@ void Play(int handle, float volume)
 {
     if(handle == -1)
         return;
-    ChangeVolumeSoundMem(ToDxVolume(volume), handle);
+    ChangeVolumeSoundMem(ToDxVolume(volume * Settings::GetSfxVolume()), handle);
     PlaySoundMem(handle, DX_PLAYTYPE_BACK);    //BACK = do not wait, overlapping plays are fine(BACK=待たない。重ねて鳴らしてもOK)
 }
 
@@ -41,7 +42,16 @@ void PlayLoop(int handle, float volume)
 {
     if(handle == -1)
         return;
-    ChangeVolumeSoundMem(ToDxVolume(volume), handle);
+    ChangeVolumeSoundMem(ToDxVolume(volume * Settings::GetSfxVolume()), handle);
+    if(CheckSoundMem(handle) != 1)    //do not restart it if it is already playing(すでに再生中なら最初からにしない)
+        PlaySoundMem(handle, DX_PLAYTYPE_LOOP);
+}
+
+void PlayBgm(int handle, float volume)
+{
+    if(handle == -1)
+        return;
+    ChangeVolumeSoundMem(ToDxVolume(volume * Settings::GetBgmVolume()), handle);
     if(CheckSoundMem(handle) != 1)    //do not restart it if it is already playing(すでに再生中なら最初からにしない)
         PlaySoundMem(handle, DX_PLAYTYPE_LOOP);
 }

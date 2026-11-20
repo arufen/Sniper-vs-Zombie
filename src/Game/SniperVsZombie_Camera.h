@@ -24,6 +24,9 @@ public:
     //1.0 = just fired, 0.0 = ready to shoot. for the reload bar(1.0=撃った直後、0.0=撃てる。装填バー用)
     float GetReloadRatio() const;
 
+    //no shot for at least this long, e.g. so the click on RESUME does not fire(最低この時間は撃てない。再開ボタンのクリックで撃たないように)
+    void DelayNextShot(float seconds);
+
 private:
     float shootIntervalTime = Config::SHOT_INTERVAL;    //from StageConfig.h(StageConfig.hから)
     float shootCurrentTime  = shootIntervalTime;
