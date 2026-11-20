@@ -6,6 +6,7 @@
 #include "SniperVsZombie_Bullet.h"
 #include "ObjectNames.h"
 #include "SniperVsZombie_MainStage.h"
+#include "StageConfig.h"
 #include <System/Component/ComponentCollisionLine.h>
 
 namespace SniperVsZombie {
@@ -40,6 +41,14 @@ void Bullet::Update()
 {
     AddTranslate(direction_ * speed_);
 
+    //WALL: flew past the wall distance = it hit the building. snap onto the wall, show the hit, remove(壁: 壁の距離を越えた=建物に当たった。壁の位置に戻してエフェクトを出し、消す)
+    if(length(GetTranslate() - start_).x >= stop_distance_) {
+        SetTranslate(start_ + direction_ * stop_distance_);
+        SpawnHitEffect();
+        Scene::Object::Release(SharedThis());
+        return;
+    }
+
     //Destroy this object after 5 seconds
     time_to_destroy_--;
 
@@ -60,17 +69,37 @@ void Bullet::ResetDirection()
     SetRotationToVector(direction_);
 }
 
-// 当たり判定が行われたときに呼ばれる関数
-void Bullet::OnHit(const ComponentCollision::HitInfo& hit_info)
+void Bullet::SetStopDistance(float distance)
 {
-    // 自分を削除する
-    Scene::Object::Release(SharedThis());
+    start_         = GetTranslate();
+    stop_distance_ = distance;
+}
 
+bool Bullet::CanReach(const float3& point) const
+{
+    return length(point - start_).x <= stop_distance_ + Config::SHOT_WALL_TOLERANCE;
+}
+
+void Bullet::SpawnHitEffect()
+{
     auto mat = GetWorldMatrix();
     auto rot = matrix::rotateY(-0.5 * DX_PI);
     mat      = mul(rot, mat);
 
     ComponentEffect::Object::Create("data/Sample/Effects/hit_eff.efkefc", mat);
+}
+
+// 当たり判定が行われたときに呼ばれる関数
+void Bullet::OnHit(const ComponentCollision::HitInfo& hit_info)
+{
+    //the collision line reaches far ahead, so it can touch a zombie BEHIND a wall. ignore that one(当たり判定の線は前方に長いので、壁の向こうのゾンビに触れることがある。それは無視)
+    if(const Object* other = hit_info.hit_collision_->GetOwner(); other && !CanReach(other->GetTranslate()))
+        return;
+
+    // 自分を削除する
+    Scene::Object::Release(SharedThis());
+
+    SpawnHitEffect();
 
     // 最後にこれを入れてください。ここでめり込みの解消を行っています。
     Super::OnHit(hit_info);

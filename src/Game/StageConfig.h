@@ -16,6 +16,12 @@ inline const float3 PLAYER_SPAWN_POSITION = {447.147f, 231.806f, 585.323f};
 inline const float3 PLAYER_SPAWN_ROTATION = {0.0f, -180.0f, 0.0f};
 inline const float3 PLAYER_EYE_TO_BODY    = {0.0f, -10.0f, 0.0f};    //hit body sits under the camera eye(当たり判定の体はカメラの目の下)
 
+//SHOOTING(射撃)
+inline constexpr float SHOT_INTERVAL         = 1.0f;       //seconds between 2 shots = bolt action time(2発の間の秒数=ボルトを引く時間)
+inline constexpr float SHOT_WALL_CHECK_RANGE = 3000.0f;    //how far a shot looks for a building in its way(弾が進路上の建物を探す距離)
+inline constexpr float SHOT_WALL_TOLERANCE =
+    20.0f;    //an enemy this close in front of the wall still gets hit (feet vs head height)(壁のこの距離手前までの敵には当たる。足元と頭の高さの差)
+
 //---------------------------------------------------------------------------
 // MAP(マップ) - shared by MainMenu, MainStage and GameOver(MainMenu・MainStage・GameOverで共有)
 //---------------------------------------------------------------------------

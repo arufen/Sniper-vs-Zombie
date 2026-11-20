@@ -500,6 +500,22 @@ void SniperVsZombie_MainStage::PostDraw()
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);    //stop the blend  (0 means nothing)
     }
 
+    //RELOAD BAR under the crosshair: shrinks while the bolt is pulled, gone when you can shoot(照準の下の装填バー: ボルトを引いている間に縮み、撃てる時は消える)
+    if(stageState_ == StageState::Playing) {
+        if(auto camera = Scene::Object::Get<Camera>()) {
+            const float ratio = camera->GetReloadRatio();
+            if(ratio > 0.0f) {
+                const float half_w = 40.0f;    //half bar width, pixels(バーの幅の半分・ピクセル)
+                const float cx     = WINDOW_W * 0.5f;
+                const float top    = WINDOW_H * 0.5f + 34.0f;    //a bit under the crosshair(照準の少し下)
+                const float bottom = top + 5.0f;
+                DrawBoxAA(cx - half_w - 1.0f, top - 1.0f, cx + half_w + 1.0f, bottom + 1.0f, GetColor(0, 0, 0), TRUE);    //black back(黒い背景)
+                DrawBoxAA(
+                    cx - half_w * ratio, top, cx + half_w * ratio, bottom, GetColor(240, 180, 76), TRUE);    //amber, shrinks to the center(琥珀色。中央へ縮む)
+            }
+        }
+    }
+
     //GATE ARROW INDICATOR - bouncing green arrow pointing down at the gate
     {
         // lift the marker above the gate model so it's not stuck inside it
