@@ -26,7 +26,7 @@ static const int DEBUG_VIEW = 0;
 static const bool FIX_NORMALS = true;  //false = use the model normals as they are, to compare(false=比較用にモデルの法線をそのまま使う)
 
 // STEP 2: moon(月)
-static const float3 MOON_DIR      = normalize(float3(-0.5, -0.5, -0.5));  //direction the moonlight TRAVELS. y must be NEGATIVE = light comes down(月光が進む向き。yは必ず負=光が上から来る)
+static const float3 MOON_DIR      = normalize(float3(-0.5, -0.5, 0.5));  //direction the moonlight TRAVELS. y must be NEGATIVE = light comes down(月光が進む向き。yは必ず負=光が上から来る)
 static const float3 MOON_COLOR    = float3(0.85, 0.90, 1.0);            //almost white, a little cold(ほぼ白、少し冷たい)
 static const float  MOON_STRENGTH = 2.0;                                //(月の強さ)
 
