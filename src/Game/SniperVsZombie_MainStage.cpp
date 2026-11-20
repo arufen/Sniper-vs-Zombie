@@ -17,6 +17,7 @@
 #include "SniperVsZombie_GameOver.h"
 #include "HudText.h"
 #include "ThreatIndicator.h"
+#include "SniperVsZombie_Bullet.h"
 #include "SniperVsZombie_MainMenu.h"
 #include "StoryText.h"
 #include "SoundUtil.h"
@@ -172,6 +173,7 @@ void SniperVsZombie_MainStage::ResetStageState()
     hitmarkerAlpha_      = 0;
     hitmarkerIsHeadshot_ = false;
     popups_.Clear();
+    Bullet::SetShowHitbox(false);    //the spawner starts with it off too(スポナーもOFFで始まる)
     kills_             = 0;
     headshots_         = 0;
     playTime_          = 0.0f;
@@ -475,6 +477,13 @@ void SniperVsZombie_MainStage::Update()
     if(paused_)
         return;
 
+    //F9 = HITBOX VIEW (dev tool, like F7/F8 CameraProbe): zombie capsules + bullet lines drawn in game(F9=当たり判定表示。F7/F8のCameraProbeと同じ開発用。ゾンビのカプセルと弾の線をゲーム中に描く)
+    if(IsKeyDown(KEY_INPUT_F9)) {
+        const bool show = !spawner_.IsShowingHitboxes();
+        spawner_.SetShowHitboxes(show);
+        Bullet::SetShowHitbox(show);
+    }
+
     //OPENING - nothing moves, a click skips the cutscene(オープニング。何も動かない。クリックでスキップ)
     if(stageState_ == StageState::Opening) {
         if(click_started && opening_)
@@ -668,6 +677,10 @@ void SniperVsZombie_MainStage::PostDraw()
     if(stageState_ == StageState::Playing) {
         for(const float3& pos : spawner_.GetLivingPositions(ZombieType::Stalker)) Hud::DrawThreatIndicator(pos, arrowTimer_);
     }
+
+    //HITBOX VIEW label, so it is never left on by accident(当たり判定表示のラベル。うっかり付けっぱなしにしないように)
+    if(spawner_.IsShowingHitboxes())
+        Hud::DrawLabelCenter(WINDOW_W / 2, 12, GetColor(255, 220, 0), "HITBOX VIEW (F9)");
 
     //SCORE POPUPS at the kill spots(キル地点のスコア表示)
     popups_.Draw();

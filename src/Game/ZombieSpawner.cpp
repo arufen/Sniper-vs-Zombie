@@ -25,6 +25,7 @@ void ZombieSpawner::Reset()
 {
     zombies_.clear();
     phase_                 = 0;
+    show_hitboxes_         = false;
     normal_spawn_interval_ = Config::SPAWN_PHASES[0].normal_interval_start;
     normal_spawn_timer_    = normal_spawn_interval_;
     stalker_spawn_timer_   = 0.0f;    //0 = the first stalker comes right when its phase starts(0なのでフェーズ開始と同時に1体目が出る)
@@ -123,11 +124,27 @@ ObjectPtr ZombieSpawner::SpawnZombie(ZombieType type, int lane)
         death->SetOnKilled(on_zombie_killed_);
 
     zombies_.push_back({type, zombie});
+    if(show_hitboxes_)
+        ApplyShowHitboxes(*zombie, true);
 
     if(on_zombie_spawned_)
         on_zombie_spawned_(type);
 
     return zombie;
+}
+
+void ZombieSpawner::ApplyShowHitboxes(Object& zombie, bool show)
+{
+    for(auto& col : zombie.GetComponents<ComponentCollision>()) col->ShowInGame(show);
+}
+
+void ZombieSpawner::SetShowHitboxes(bool show)
+{
+    show_hitboxes_ = show;
+    for(const auto& z : zombies_) {
+        if(auto obj = z.object.lock())
+            ApplyShowHitboxes(*obj, show);
+    }
 }
 
 void ZombieSpawner::SetAllPaused(bool paused)
